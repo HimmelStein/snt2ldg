@@ -1,0 +1,162 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>snt2ldg.db &#8212; sentence to raw dependency graph 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="top" title="sentence to raw dependency graph 0.1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for snt2ldg.db</h1><div class="highlight"><pre>
+<span></span>
+<span class="kn">import</span> <span class="nn">records</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">postgres database: langauge_graph</span>
+<span class="sd">tables: chbible, debible, enbible, ldc200201_back, ldc2002t01, pons, pons_back</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">connect to postgres database</span>
+<span class="sd">rows = db.query(&quot;SELECT tablename from pg_tables where schemaname=&#39;public&#39;&quot;)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">psqlDataBase</span> <span class="o">=</span> <span class="s1">&#39;postgres://localhost/language_graph&#39;</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">connect to sqlite database</span>
+<span class="sd">rows = db.query(&quot;select * from sqlite_master where type =&#39;table&#39;&quot;)</span>
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="n">sqliteDataBase</span> <span class="o">=</span> <span class="s1">&#39;sqlite:///data/PONS.db&#39;</span>
+
+
+<span class="n">table_kdic</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="p">{</span><span class="s2">&quot;lan&quot;</span><span class="p">:</span> <span class="s2">&quot;de&quot;</span><span class="p">,</span>  <span class="s2">&quot;table&quot;</span><span class="p">:</span> <span class="s2">&quot;pons&quot;</span><span class="p">,</span>  <span class="s2">&quot;snt&quot;</span><span class="p">:</span> <span class="s2">&quot;de_snt&quot;</span><span class="p">,</span>  <span class="s2">&quot;ldg&quot;</span><span class="p">:</span> <span class="s2">&quot;de_ldg&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;lan&quot;</span><span class="p">:</span> <span class="s2">&quot;ch&quot;</span><span class="p">,</span> <span class="s2">&quot;table&quot;</span><span class="p">:</span> <span class="s2">&quot;pons&quot;</span><span class="p">,</span> <span class="s2">&quot;snt&quot;</span><span class="p">:</span> <span class="s2">&quot;ch_snt&quot;</span><span class="p">,</span> <span class="s2">&quot;ldg&quot;</span><span class="p">:</span> <span class="s2">&quot;ch_ldg&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;lan&quot;</span><span class="p">:</span> <span class="s2">&quot;ch&quot;</span><span class="p">,</span> <span class="s2">&quot;table&quot;</span><span class="p">:</span> <span class="s2">&quot;ldc2002t01&quot;</span><span class="p">,</span> <span class="s2">&quot;snt&quot;</span><span class="p">:</span> <span class="s2">&quot;ch_snt&quot;</span><span class="p">,</span> <span class="s2">&quot;ldg&quot;</span><span class="p">:</span> <span class="s2">&quot;ch_ldg&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;lan&quot;</span><span class="p">:</span> <span class="s2">&quot;en&quot;</span><span class="p">,</span>  <span class="s2">&quot;table&quot;</span><span class="p">:</span> <span class="s2">&quot;ldc2002t01&quot;</span><span class="p">,</span> <span class="s2">&quot;snt&quot;</span><span class="p">:</span> <span class="s2">&quot;en_snt&quot;</span><span class="p">,</span>  <span class="s2">&quot;ldg&quot;</span><span class="p">:</span> <span class="s2">&quot;en_ldg&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;lan&quot;</span><span class="p">:</span> <span class="s2">&quot;de&quot;</span><span class="p">,</span> <span class="s2">&quot;table&quot;</span><span class="p">:</span> <span class="s2">&quot;debible&quot;</span><span class="p">,</span> <span class="s2">&quot;snt&quot;</span><span class="p">:</span> <span class="s2">&quot;snt&quot;</span><span class="p">,</span> <span class="s2">&quot;ldg&quot;</span><span class="p">:</span> <span class="s2">&quot;snt_lg&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;lan&quot;</span><span class="p">:</span> <span class="s2">&quot;ch&quot;</span><span class="p">,</span> <span class="s2">&quot;table&quot;</span><span class="p">:</span> <span class="s2">&quot;chbible&quot;</span><span class="p">,</span> <span class="s2">&quot;snt&quot;</span><span class="p">:</span> <span class="s2">&quot;snt&quot;</span><span class="p">,</span> <span class="s2">&quot;ldg&quot;</span><span class="p">:</span> <span class="s2">&quot;snt_lg&quot;</span><span class="p">},</span>
+    <span class="p">{</span><span class="s2">&quot;lan&quot;</span><span class="p">:</span> <span class="s2">&quot;en&quot;</span><span class="p">,</span> <span class="s2">&quot;table&quot;</span><span class="p">:</span> <span class="s2">&quot;enbible&quot;</span><span class="p">,</span> <span class="s2">&quot;snt&quot;</span><span class="p">:</span> <span class="s2">&quot;snt&quot;</span><span class="p">,</span> <span class="s2">&quot;ldg&quot;</span><span class="p">:</span> <span class="s2">&quot;snt_lg&quot;</span><span class="p">},</span>
+    <span class="p">]</span>
+
+
+<div class="viewcode-block" id="get_raw_ldg_with_id_from_pons"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.db.get_raw_ldg_with_id_from_pons">[docs]</a><span class="k">def</span> <span class="nf">get_raw_ldg_with_id_from_pons</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">table</span><span class="o">=</span><span class="s1">&#39;PONS&#39;</span><span class="p">,</span> <span class="n">lan</span><span class="o">=</span><span class="s1">&#39;ch&#39;</span><span class="p">):</span>
+    <span class="k">assert</span> <span class="n">table</span> <span class="o">==</span> <span class="s1">&#39;PONS&#39;</span>
+    <span class="k">global</span> <span class="n">table_kdic</span><span class="p">,</span> <span class="n">psqlDataBase</span><span class="p">,</span> <span class="n">sqliteDataBase</span>
+    <span class="n">db</span> <span class="o">=</span> <span class="n">records</span><span class="o">.</span><span class="n">Database</span><span class="p">(</span><span class="n">psqlDataBase</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">table</span> <span class="o">==</span> <span class="s1">&#39;PONS&#39;</span> <span class="ow">and</span> <span class="n">lan</span> <span class="o">==</span> <span class="s1">&#39;ch&#39;</span><span class="p">:</span>
+        <span class="n">sql_str</span> <span class="o">=</span> <span class="s2">&quot;SELECT ch_snt, ch_ldg FROM &quot;</span><span class="o">+</span> <span class="n">table</span> <span class="o">+</span> <span class="s2">&quot; where id=&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">table</span> <span class="o">==</span> <span class="s1">&#39;PONS&#39;</span> <span class="ow">and</span> <span class="n">lan</span> <span class="o">==</span> <span class="s1">&#39;de&#39;</span><span class="p">:</span>
+        <span class="n">sql_str</span> <span class="o">=</span> <span class="s2">&quot;SELECT de_snt, de_ldg FROM &quot;</span><span class="o">+</span> <span class="n">table</span> <span class="o">+</span> <span class="s2">&quot; where id=&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
+
+    <span class="n">rows</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">sql_str</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="k">return</span> <span class="kc">None</span></div>
+
+
+<div class="viewcode-block" id="check_database"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.db.check_database">[docs]</a><span class="k">def</span> <span class="nf">check_database</span><span class="p">(</span><span class="n">dbname</span><span class="o">=</span><span class="s1">&#39;sqlite:///data/PONS.db&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    check whether database exist, or contains tables</span>
+<span class="sd">    :param dbname:</span>
+<span class="sd">    :return: -1, if either database not exist, or does not have tables,</span>
+<span class="sd">             n, number of tables it has</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">db</span> <span class="o">=</span> <span class="n">records</span><span class="o">.</span><span class="n">Database</span><span class="p">(</span><span class="n">dbname</span><span class="p">)</span>
+    <span class="n">tables</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">get_table_names</span><span class="p">()</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tables</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">return</span> <span class="o">-</span><span class="mi">1</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="n">tables</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="list_tables"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.db.list_tables">[docs]</a><span class="k">def</span> <span class="nf">list_tables</span><span class="p">(</span><span class="n">dbname</span><span class="o">=</span><span class="s1">&#39;sqlite:///data/PONS.db&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    print all tables in the  database</span>
+<span class="sd">    :param dbname: database name</span>
+<span class="sd">    :return: a list of tables in the data base</span>
+<span class="sd">             [], if it has not tables</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">db</span> <span class="o">=</span> <span class="n">records</span><span class="o">.</span><span class="n">Database</span><span class="p">(</span><span class="n">dbname</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">db</span><span class="o">.</span><span class="n">get_table_names</span><span class="p">()</span></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Tiansi Dong.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.9</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

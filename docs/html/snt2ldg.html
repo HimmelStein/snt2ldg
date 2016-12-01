@@ -1,0 +1,159 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>snt2ldg package &#8212; sentence to raw dependency graph 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="top" title="sentence to raw dependency graph 0.1.0 documentation" href="index.html" />
+    <link rel="prev" title="Welcome to snt2ldg’s documentation!" href="index.html" />
+   
+  <link rel="stylesheet" href="_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <div class="section" id="snt2ldg-package">
+<h1>snt2ldg package<a class="headerlink" href="#snt2ldg-package" title="Permalink to this headline">¶</a></h1>
+<div class="section" id="submodules">
+<h2>Submodules<a class="headerlink" href="#submodules" title="Permalink to this headline">¶</a></h2>
+</div>
+<div class="section" id="module-snt2ldg.core">
+<span id="snt2ldg-core-module"></span><h2>snt2ldg.core module<a class="headerlink" href="#module-snt2ldg.core" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="snt2ldg.core.snt2ldg">
+<code class="descclassname">snt2ldg.core.</code><code class="descname">snt2ldg</code><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="_modules/snt2ldg/core.html#snt2ldg"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#snt2ldg.core.snt2ldg" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+</div>
+<div class="section" id="module-snt2ldg.db">
+<span id="snt2ldg-db-module"></span><h2>snt2ldg.db module<a class="headerlink" href="#module-snt2ldg.db" title="Permalink to this headline">¶</a></h2>
+<dl class="function">
+<dt id="snt2ldg.db.check_database">
+<code class="descclassname">snt2ldg.db.</code><code class="descname">check_database</code><span class="sig-paren">(</span><em>dbname='sqlite:///data/PONS.db'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/snt2ldg/db.html#check_database"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#snt2ldg.db.check_database" title="Permalink to this definition">¶</a></dt>
+<dd><p>check whether database exist, or contains tables
+:param dbname:
+:return: -1, if either database not exist, or does not have tables,</p>
+<blockquote>
+<div>n, number of tables it has</div></blockquote>
+</dd></dl>
+
+<dl class="function">
+<dt id="snt2ldg.db.get_raw_ldg_with_id_from_pons">
+<code class="descclassname">snt2ldg.db.</code><code class="descname">get_raw_ldg_with_id_from_pons</code><span class="sig-paren">(</span><em>id</em>, <em>table='PONS'</em>, <em>lan='ch'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/snt2ldg/db.html#get_raw_ldg_with_id_from_pons"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#snt2ldg.db.get_raw_ldg_with_id_from_pons" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="function">
+<dt id="snt2ldg.db.list_tables">
+<code class="descclassname">snt2ldg.db.</code><code class="descname">list_tables</code><span class="sig-paren">(</span><em>dbname='sqlite:///data/PONS.db'</em><span class="sig-paren">)</span><a class="reference internal" href="_modules/snt2ldg/db.html#list_tables"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#snt2ldg.db.list_tables" title="Permalink to this definition">¶</a></dt>
+<dd><p>print all tables in the  database
+:param dbname: database name
+:return: a list of tables in the data base</p>
+<blockquote>
+<div>[], if it has not tables</div></blockquote>
+</dd></dl>
+
+<dl class="data">
+<dt id="snt2ldg.db.psqlDataBase">
+<code class="descclassname">snt2ldg.db.</code><code class="descname">psqlDataBase</code><em class="property"> = 'postgres://localhost/language_graph'</em><a class="headerlink" href="#snt2ldg.db.psqlDataBase" title="Permalink to this definition">¶</a></dt>
+<dd><p>connect to sqlite database
+rows = db.query(&#8220;select * from sqlite_master where type =&#8217;table&#8217;&#8221;)</p>
+</dd></dl>
+
+</div>
+<div class="section" id="module-snt2ldg">
+<span id="module-contents"></span><h2>Module contents<a class="headerlink" href="#module-snt2ldg" title="Permalink to this headline">¶</a></h2>
+</div>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="index.html">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">snt2ldg package</a><ul>
+<li><a class="reference internal" href="#submodules">Submodules</a></li>
+<li><a class="reference internal" href="#module-snt2ldg.core">snt2ldg.core module</a></li>
+<li><a class="reference internal" href="#module-snt2ldg.db">snt2ldg.db module</a></li>
+<li><a class="reference internal" href="#module-snt2ldg">Module contents</a></li>
+</ul>
+</li>
+</ul>
+<div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="index.html">Documentation overview</a><ul>
+      <li>Previous: <a href="index.html" title="previous chapter">Welcome to snt2ldg&#8217;s documentation!</a></li>
+  </ul></li>
+</ul>
+</div>
+  <div role="note" aria-label="source link">
+    <h3>This Page</h3>
+    <ul class="this-page-menu">
+      <li><a href="_sources/snt2ldg.txt"
+            rel="nofollow">Show Source</a></li>
+    </ul>
+   </div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Tiansi Dong.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.9</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+      |
+      <a href="_sources/snt2ldg.txt"
+          rel="nofollow">Page source</a>
+    </div>
+
+    
+
+    
+  </body>
+</html>
