@@ -12,8 +12,9 @@ __pycache__/
 
 # Distribution / packaging
 .Python
-Data/
-env/
+data/
+snt2ldg/helpers/
+venv/
 build/
 develop-eggs/
 dist/
