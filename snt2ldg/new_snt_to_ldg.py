@@ -30,6 +30,10 @@ dep_parser_de = StanfordDependencyParser(model_path = model_de_path)
 dep_parser_cn = StanfordDependencyParser(model_path = model_cn_path)
 
 
+def snt_to_ldg(snt, lan=''):
+    return get_dep_str(snt, lan=lan, ch_parser = 'hit', de_parser='parzu')
+
+
 def get_ch_ldg(snt, ch_parser='hit', format='conll'):
     """
     :param snt: one sentence

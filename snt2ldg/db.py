@@ -68,7 +68,7 @@ def find_table(table='pons', lan='ch'):
 def get_raw_ldg_with_id_from_pons(id, table='PONS', lan='ch'):
     assert table == 'PONS'
     global table_kdic, psqlDataBase, sqliteDataBase
-    db = records.Database(psqlDataBase)
+    db = records.Database(psqlDataBase, user="Postgre")
     if table == 'PONS' and lan == 'ch':
         sql_str = "SELECT ch_snt, ch_ldg FROM "+ table + " where id="+str(id)
     elif table == 'PONS' and lan == 'de':
@@ -375,3 +375,13 @@ def load_bible_ldg_into_table_from_pickle(lans=['de','ch','en']):
             tx.rollback()
 
     return count
+
+
+def key_word_search(snt, lan=''):
+    """
+    search database by key-words.
+    :param snt:
+    :param lan:
+    :return:
+    """
+    pass
