@@ -1,0 +1,246 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>snt2ldg.create_bible_ldg &#8212; sentence to raw dependency graph 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="top" title="sentence to raw dependency graph 0.1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for snt2ldg.create_bible_ldg</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">random</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="k">import</span> <span class="n">pprint</span>
+<span class="kn">from</span> <span class="nn">subprocess</span> <span class="k">import</span> <span class="n">Popen</span><span class="p">,</span> <span class="n">PIPE</span>
+<span class="kn">from</span> <span class="nn">.pickle_util</span> <span class="k">import</span> <span class="n">load_pickle</span><span class="p">,</span> <span class="n">get_all_rows_from_csv</span><span class="p">,</span> <span class="n">dump_pickle</span>
+<span class="kn">from</span> <span class="nn">.config_wv</span> <span class="k">import</span> <span class="n">DeBibleCsv</span><span class="p">,</span> <span class="n">DeBibleLDG</span>
+<span class="kn">from</span> <span class="nn">nltk.parse.stanford</span> <span class="k">import</span> <span class="n">StanfordDependencyParser</span>
+
+<span class="n">dep_parser_en</span> <span class="o">=</span> <span class="n">StanfordDependencyParser</span><span class="p">(</span><span class="n">model_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">abspath</span><span class="p">(</span><span class="s1">&#39;englishPCFG.ser.gz&#39;</span><span class="p">))</span>
+<span class="n">parzu_loc</span> <span class="o">=</span> <span class="s1">&#39;/Users/tdong/components/ParZu/parzu&#39;</span>
+<span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s1">&#39;/usr/local/bin/&#39;</span><span class="p">)</span>
+<span class="n">pprint</span><span class="p">(</span><span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="get_all_ldgs_of_sentences"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.create_bible_ldg.get_all_ldgs_of_sentences">[docs]</a><span class="k">def</span> <span class="nf">get_all_ldgs_of_sentences</span><span class="p">(</span><span class="n">csvfname</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">parser</span><span class="o">=</span><span class="s1">&#39;hit&#39;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;conll&#39;</span><span class="p">):</span>
+    <span class="n">picklefname</span> <span class="o">=</span>  <span class="n">csvfname</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39;pickle&#39;</span>
+    <span class="n">dic</span> <span class="o">=</span> <span class="n">load_pickle</span><span class="p">(</span><span class="n">picklefname</span><span class="p">)</span>
+    <span class="n">existing_keys</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">dic</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="k">for</span> <span class="n">rowLst</span> <span class="ow">in</span> <span class="n">get_all_rows_from_csv</span><span class="p">(</span><span class="n">csvfname</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">):</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">rowLst</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot;_&quot;</span><span class="o">+</span><span class="s2">&quot;_&quot;</span><span class="o">+</span><span class="n">rowLst</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">+</span><span class="s2">&quot;_&quot;</span><span class="o">+</span><span class="n">rowLst</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">snt</span> <span class="o">=</span> <span class="n">rowLst</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">snt</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span><span class="o">==</span><span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">if</span> <span class="n">key</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">existing_keys</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;get ldg for &quot;</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">snt</span><span class="p">)</span>
+            <span class="n">ldg</span> <span class="o">=</span> <span class="n">get_ldg</span><span class="p">(</span><span class="n">snt</span><span class="p">,</span> <span class="n">parser</span><span class="o">=</span><span class="n">parser</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">ldg</span> <span class="o">==</span> <span class="s1">&#39;need_long_wait&#39;</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;beginning long waiting...&#39;</span><span class="p">)</span>
+                <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">25</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;try again...&#39;</span><span class="p">)</span>
+                <span class="n">get_all_ldgs_of_sentences</span><span class="p">(</span><span class="n">csvfname</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">,</span> <span class="n">parser</span><span class="o">=</span><span class="n">parser</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">)</span>
+
+            <span class="n">dic</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">ldg</span>
+            <span class="n">dump_pickle</span><span class="p">(</span><span class="n">picklefname</span><span class="p">,</span> <span class="n">dic</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_ldg"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.create_bible_ldg.get_ldg">[docs]</a><span class="k">def</span> <span class="nf">get_ldg</span><span class="p">(</span><span class="n">snt</span><span class="p">,</span> <span class="n">parser</span><span class="o">=</span><span class="s1">&#39;none&#39;</span><span class="p">,</span> <span class="nb">format</span> <span class="o">=</span> <span class="s1">&#39;conll&#39;</span><span class="p">):</span>
+    <span class="k">if</span> <span class="n">parser</span> <span class="o">==</span> <span class="s1">&#39;hit&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">get_ch_ldg</span><span class="p">(</span><span class="n">snt</span><span class="p">,</span> <span class="n">ch_parser</span><span class="o">=</span><span class="n">parser</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">parser</span> <span class="o">==</span> <span class="s1">&#39;stanford&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">get_en_ldg</span><span class="p">(</span><span class="n">snt</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">parser</span> <span class="o">==</span> <span class="s1">&#39;parzu&#39;</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">get_de_ldg</span><span class="p">(</span><span class="n">snt</span><span class="p">,</span> <span class="n">de_parser</span><span class="o">=</span><span class="n">parser</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="nb">format</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_de_ldg"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.create_bible_ldg.get_de_ldg">[docs]</a><span class="k">def</span> <span class="nf">get_de_ldg</span><span class="p">(</span><span class="n">snt</span><span class="p">,</span> <span class="n">de_parser</span><span class="o">=</span><span class="s1">&#39;parzu&#39;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;conll&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param snt:</span>
+<span class="sd">    :param en_parser:</span>
+<span class="sd">    :param format:</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">de_parser</span> <span class="o">==</span> <span class="s1">&#39;parzu&#39;</span><span class="p">:</span>
+        <span class="n">echo_process</span> <span class="o">=</span> <span class="n">Popen</span><span class="p">([</span><span class="s1">&#39;echo&#39;</span><span class="p">,</span> <span class="n">snt</span><span class="p">],</span> <span class="n">stdout</span><span class="o">=</span><span class="n">PIPE</span><span class="p">)</span>
+        <span class="n">parzu_process</span> <span class="o">=</span> <span class="n">Popen</span><span class="p">([</span><span class="n">parzu_loc</span><span class="p">],</span>
+                             <span class="n">stdin</span><span class="o">=</span><span class="n">echo_process</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">PIPE</span><span class="p">)</span>
+        <span class="n">echo_process</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="n">out</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="n">parzu_process</span><span class="o">.</span><span class="n">communicate</span><span class="p">()</span>
+        <span class="n">pprint</span><span class="p">(</span><span class="n">out</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">out</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;de parser is not recognized&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_en_ldg"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.create_bible_ldg.get_en_ldg">[docs]</a><span class="k">def</span> <span class="nf">get_en_ldg</span><span class="p">(</span><span class="n">snt</span><span class="p">,</span> <span class="n">en_parser</span><span class="o">=</span><span class="s1">&#39;stanford&#39;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;conll&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param snt:</span>
+<span class="sd">    :param en_parser:</span>
+<span class="sd">    :param format:</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="n">dep_parser_en</span><span class="o">.</span><span class="n">raw_parse</span><span class="p">(</span><span class="n">snt</span><span class="p">)</span>
+    <span class="n">dep</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">format</span> <span class="o">==</span> <span class="s1">&#39;conll&#39;</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">dep</span><span class="o">.</span><span class="n">to_conll</span><span class="p">(</span><span class="mi">10</span><span class="p">))</span>
+        <span class="k">return</span> <span class="n">dep</span><span class="o">.</span><span class="n">to_conll</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_ch_ldg"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.create_bible_ldg.get_ch_ldg">[docs]</a><span class="k">def</span> <span class="nf">get_ch_ldg</span><span class="p">(</span><span class="n">snt</span><span class="p">,</span> <span class="n">ch_parser</span><span class="o">=</span><span class="s1">&#39;hit&#39;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;conll&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param snt: one sentence</span>
+<span class="sd">    :param ch_parser:</span>
+<span class="sd">    :param format: output format</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">ch_parser</span> <span class="o">==</span> <span class="s1">&#39;hit&#39;</span><span class="p">:</span>
+        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+        <span class="kn">import</span> <span class="nn">urllib.request</span>
+        <span class="kn">import</span> <span class="nn">urllib.parse</span>
+        <span class="kn">from</span> <span class="nn">urllib.parse</span> <span class="k">import</span> <span class="n">quote</span>
+        <span class="n">url_get_base</span> <span class="o">=</span> <span class="s2">&quot;http://api.ltp-cloud.com/analysis/?&quot;</span>
+        <span class="n">api_key</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choice</span><span class="p">([</span><span class="s2">&quot;74x4c7F3JiRepP6isevdShbXmhrLJE8RJWvnsZPy&quot;</span><span class="p">,</span>
+                                 <span class="s2">&quot;47b7P5F0pQvs8b3MUSXAtAqu6pCZsXYKndEXoise&quot;</span><span class="p">])</span>
+        <span class="n">pattern</span> <span class="o">=</span> <span class="s2">&quot;dp&quot;</span>
+        <span class="n">url</span> <span class="o">=</span> <span class="n">url_get_base</span> <span class="o">+</span> <span class="s1">&#39;api_key=&#39;</span> <span class="o">+</span> <span class="n">api_key</span> <span class="o">+</span> <span class="s1">&#39;&amp;text=&#39;</span> <span class="o">+</span> <span class="n">quote</span><span class="p">(</span>
+            <span class="n">snt</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;&amp;format=&#39;</span> <span class="o">+</span> <span class="nb">format</span> <span class="o">+</span> <span class="s1">&#39;&amp;pattern=&#39;</span> <span class="o">+</span> <span class="n">pattern</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">req</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">Request</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+            <span class="k">with</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">req</span><span class="p">,</span> <span class="n">timeout</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span> <span class="k">as</span> <span class="n">response</span><span class="p">:</span>
+                <span class="n">content</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+                <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">response</span><span class="p">:</span>
+                    <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf8&#39;</span><span class="p">)</span>  <span class="c1"># Decoding the binary data to text.</span>
+                    <span class="n">content</span> <span class="o">=</span> <span class="n">content</span> <span class="o">+</span> <span class="n">line</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s1">&#39;need_long_wait&#39;</span>
+        <span class="k">return</span> <span class="n">content</span></div>
+
+
+<div class="viewcode-block" id="create_ldg_from_text"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.create_bible_ldg.create_ldg_from_text">[docs]</a><span class="k">def</span> <span class="nf">create_ldg_from_text</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">encoding</span> <span class="o">=</span> <span class="s1">&#39;ISO-8859-1&#39;</span><span class="p">):</span>
+    <span class="n">fullname</span><span class="p">,</span> <span class="n">ext</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">fname</span><span class="p">)</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">fullname</span> <span class="o">+</span> <span class="s1">&#39;.ldg&#39;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">output</span><span class="p">)</span>
+    <span class="n">cmd</span> <span class="o">=</span> <span class="n">parzu_loc</span> <span class="o">+</span> <span class="s2">&quot;  -l -o conll &lt;  &quot;</span> <span class="o">+</span> <span class="n">fname</span> <span class="o">+</span> <span class="s2">&quot; &gt; &quot;</span> <span class="o">+</span> <span class="n">output</span>
+    <span class="n">os</span><span class="o">.</span><span class="n">system</span><span class="p">(</span><span class="n">cmd</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="create_ldg_pickle_from_ldg_text"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.create_bible_ldg.create_ldg_pickle_from_ldg_text">[docs]</a><span class="k">def</span> <span class="nf">create_ldg_pickle_from_ldg_text</span><span class="p">(</span><span class="n">fnamecsv</span><span class="p">,</span> <span class="n">fnameldgtxt</span><span class="p">,</span> <span class="n">encoding</span> <span class="o">=</span> <span class="s1">&#39;ISO-8859-1&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param fnamecsv: csv file, each line is a snt</span>
+<span class="sd">    :param fnameldgtxt: txt file,</span>
+<span class="sd">    :param encoding:</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">picklefname</span> <span class="o">=</span> <span class="n">fnamecsv</span><span class="p">[:</span><span class="o">-</span><span class="mi">3</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;pickle&#39;</span>
+    <span class="n">dic</span> <span class="o">=</span> <span class="n">load_pickle</span><span class="p">(</span><span class="n">picklefname</span><span class="p">)</span>
+
+    <span class="n">allRowLst</span> <span class="o">=</span> <span class="n">get_all_rows_from_csv</span><span class="p">(</span><span class="n">fnamecsv</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="n">encoding</span><span class="p">)</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">fnameldgtxt</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">fh</span><span class="p">:</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">fh</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="n">ldgLst</span> <span class="o">=</span> <span class="n">data</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="n">j</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">allRowLst</span><span class="p">)):</span>
+        <span class="n">rowLst</span> <span class="o">=</span> <span class="n">allRowLst</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">key</span> <span class="o">=</span> <span class="n">rowLst</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">rowLst</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s2">&quot;_&quot;</span> <span class="o">+</span> <span class="n">rowLst</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+        <span class="n">snt</span> <span class="o">=</span> <span class="n">rowLst</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">snt</span><span class="o">.</span><span class="n">strip</span><span class="p">())</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">continue</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">ldg</span> <span class="o">=</span> <span class="n">ldgLst</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="n">dic</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">ldg</span>
+            <span class="n">j</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="n">dump_pickle</span><span class="p">(</span><span class="n">picklefname</span><span class="p">,</span> <span class="n">dic</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dic</span><span class="o">.</span><span class="n">keys</span><span class="p">()))</span></div>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="c1">#get_all_ldgs_of_sentences(config_wv.EnBibleCsv, parser=&#39;stanford&#39;)</span>
+    <span class="c1">#get_all_ldgs_of_sentences(config_wv.ChBibleCsv, parser=&#39;hit&#39;, encoding=&#39;gb2312&#39;)</span>
+    <span class="c1">#get_all_ldgs_of_sentences(config_wv.DeBibleCsv, parser=&#39;parzu&#39;, encoding=&#39;ISO-8859-1&#39;)</span>
+    <span class="c1">#dic = pre_util.load_pickle(config_wv.ChBiblePickle)</span>
+    <span class="c1">#pprint(dic)</span>
+    <span class="c1">#create_ldg_from_text(config_wv.DeBibleLst)</span>
+    <span class="n">create_ldg_pickle_from_ldg_text</span><span class="p">(</span><span class="n">DeBibleCsv</span><span class="p">,</span> <span class="n">DeBibleLDG</span><span class="p">)</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Tiansi Dong.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.9</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

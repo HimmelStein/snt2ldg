@@ -1,0 +1,229 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>snt2ldg.new_snt_to_ldg &#8212; sentence to raw dependency graph 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="top" title="sentence to raw dependency graph 0.1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for snt2ldg.new_snt_to_ldg</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">time</span>
+<span class="kn">from</span> <span class="nn">nltk.parse.stanford</span> <span class="k">import</span> <span class="n">StanfordParser</span>
+<span class="kn">from</span> <span class="nn">nltk.parse.stanford</span> <span class="k">import</span> <span class="n">StanfordDependencyParser</span>
+<span class="kn">from</span> <span class="nn">nltk.tokenize.stanford_segmenter</span> <span class="k">import</span> <span class="n">StanfordSegmenter</span>
+<span class="kn">from</span> <span class="nn">subprocess</span> <span class="k">import</span> <span class="n">Popen</span><span class="p">,</span> <span class="n">PIPE</span>
+
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;STANFORD_PARSER&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;stanford-parser.jar&#39;</span>
+<span class="n">os</span><span class="o">.</span><span class="n">environ</span><span class="p">[</span><span class="s1">&#39;STANFORD_MODELS&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="s1">&#39;stanford-parser-3.6.0-models.jar&#39;</span>
+
+<span class="n">model_en_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">__file__</span><span class="p">)),</span> <span class="s1">&#39;helpers&#39;</span><span class="p">,</span><span class="s2">&quot;englishPCFG.ser.gz&quot;</span><span class="p">)</span>
+<span class="n">model_de_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">__file__</span><span class="p">)),</span><span class="s1">&#39;helpers&#39;</span><span class="p">,</span><span class="s2">&quot;germanPCFG.ser.gz&quot;</span><span class="p">)</span>
+<span class="n">model_cn_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">__file__</span><span class="p">)),</span><span class="s1">&#39;helpers&#39;</span><span class="p">,</span><span class="s2">&quot;chinesePCFG.ser.gz&quot;</span><span class="p">)</span>
+<span class="n">model_ch_lex_path</span> <span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">__file__</span><span class="p">)),</span><span class="s1">&#39;helpers&#39;</span><span class="p">,</span> <span class="s2">&quot;chineseFactored.ser.gz&quot;</span><span class="p">)</span>
+
+<span class="n">segmenter</span> <span class="o">=</span> <span class="n">StanfordSegmenter</span><span class="p">(</span><span class="n">path_to_jar</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">__file__</span><span class="p">)),</span><span class="s1">&#39;helpers&#39;</span><span class="p">,</span><span class="s2">&quot;stanford-segmenter.jar&quot;</span><span class="p">),</span>
+                              <span class="n">path_to_sihan_corpora_dict</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">__file__</span><span class="p">)),</span><span class="s1">&#39;helpers&#39;</span><span class="p">,</span><span class="s2">&quot;stanford-segmenter-2015-12-09/data&quot;</span><span class="p">),</span>
+                              <span class="n">path_to_model</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">__file__</span><span class="p">)),</span><span class="s1">&#39;helpers&#39;</span><span class="p">,</span><span class="s2">&quot;stanford-segmenter-2015-12-09/data/pku.gz&quot;</span><span class="p">),</span>
+                              <span class="n">path_to_dict</span><span class="o">=</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">realpath</span><span class="p">(</span><span class="n">__file__</span><span class="p">)),</span><span class="s1">&#39;helpers&#39;</span><span class="p">,</span><span class="s2">&quot;stanford-segmenter-2015-12-09/data/dict-chris6.ser.gz&quot;</span><span class="p">))</span>
+
+<span class="c1">#parser_en = StanfordParser(model_path = model_en_path)</span>
+<span class="c1">#parser_de = StanfordParser(model_path = model_de_path)</span>
+<span class="c1">#parser_cn = StanfordParser(model_path = model_cn_path)</span>
+<span class="c1">#parser_ch_lex = StanfordParser(model_path = model_ch_lex_path)</span>
+
+<span class="n">dep_parser_en</span> <span class="o">=</span> <span class="n">StanfordDependencyParser</span><span class="p">(</span><span class="n">model_path</span> <span class="o">=</span> <span class="n">model_en_path</span><span class="p">)</span>
+<span class="n">dep_parser_de</span> <span class="o">=</span> <span class="n">StanfordDependencyParser</span><span class="p">(</span><span class="n">model_path</span> <span class="o">=</span> <span class="n">model_de_path</span><span class="p">)</span>
+<span class="n">dep_parser_cn</span> <span class="o">=</span> <span class="n">StanfordDependencyParser</span><span class="p">(</span><span class="n">model_path</span> <span class="o">=</span> <span class="n">model_cn_path</span><span class="p">)</span>
+
+
+<div class="viewcode-block" id="snt_to_ldg"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.new_snt_to_ldg.snt_to_ldg">[docs]</a><span class="k">def</span> <span class="nf">snt_to_ldg</span><span class="p">(</span><span class="n">snt</span><span class="p">,</span> <span class="n">lan</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+    <span class="k">return</span> <span class="n">get_dep_str</span><span class="p">(</span><span class="n">snt</span><span class="p">,</span> <span class="n">lan</span><span class="o">=</span><span class="n">lan</span><span class="p">,</span> <span class="n">ch_parser</span> <span class="o">=</span> <span class="s1">&#39;hit&#39;</span><span class="p">,</span> <span class="n">de_parser</span><span class="o">=</span><span class="s1">&#39;parzu&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_ch_ldg"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.new_snt_to_ldg.get_ch_ldg">[docs]</a><span class="k">def</span> <span class="nf">get_ch_ldg</span><span class="p">(</span><span class="n">snt</span><span class="p">,</span> <span class="n">ch_parser</span><span class="o">=</span><span class="s1">&#39;hit&#39;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;conll&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param snt: one sentence</span>
+<span class="sd">    :param ch_parser:</span>
+<span class="sd">    :param format: output format</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+    <span class="kn">import</span> <span class="nn">urllib.request</span>
+    <span class="kn">import</span> <span class="nn">urllib.parse</span>
+    <span class="kn">from</span> <span class="nn">urllib.request</span> <span class="k">import</span> <span class="n">urlopen</span>
+    <span class="kn">from</span> <span class="nn">urllib.parse</span> <span class="k">import</span> <span class="n">quote</span>
+    <span class="n">url_get_base</span> <span class="o">=</span> <span class="s2">&quot;http://api.ltp-cloud.com/analysis/?&quot;</span>
+    <span class="n">api_key</span> <span class="o">=</span> <span class="s2">&quot;74x4c7F3JiRepP6isevdShbXmhrLJE8RJWvnsZPy&quot;</span>
+    <span class="c1"># api_key = &quot;47b7P5F0pQvs8b3MUSXAtAqu6pCZsXYKndEXoise&quot;</span>
+    <span class="nb">format</span> <span class="o">=</span> <span class="s2">&quot;conll&quot;</span>
+    <span class="n">pattern</span> <span class="o">=</span> <span class="s2">&quot;dp&quot;</span>
+    <span class="n">url</span> <span class="o">=</span> <span class="n">url_get_base</span> <span class="o">+</span> <span class="s1">&#39;api_key=&#39;</span> <span class="o">+</span> <span class="n">api_key</span> <span class="o">+</span> <span class="s1">&#39;&amp;text=&#39;</span> <span class="o">+</span> <span class="n">quote</span><span class="p">(</span>
+        <span class="n">snt</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;&amp;format=&#39;</span> <span class="o">+</span> <span class="nb">format</span> <span class="o">+</span> <span class="s1">&#39;&amp;pattern=&#39;</span> <span class="o">+</span> <span class="n">pattern</span>
+    <span class="n">req</span> <span class="o">=</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">Request</span><span class="p">(</span><span class="n">url</span><span class="p">)</span>
+    <span class="k">with</span> <span class="n">urllib</span><span class="o">.</span><span class="n">request</span><span class="o">.</span><span class="n">urlopen</span><span class="p">(</span><span class="n">req</span><span class="p">)</span> <span class="k">as</span> <span class="n">response</span><span class="p">:</span>
+        <span class="n">content</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">response</span><span class="p">:</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s1">&#39;utf8&#39;</span><span class="p">)</span>  <span class="c1"># Decoding the binary data to text.</span>
+            <span class="n">content</span> <span class="o">=</span> <span class="n">content</span> <span class="o">+</span> <span class="n">line</span>
+    <span class="k">return</span> <span class="n">content</span></div>
+
+
+<div class="viewcode-block" id="get_dep_str"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.new_snt_to_ldg.get_dep_str">[docs]</a><span class="k">def</span> <span class="nf">get_dep_str</span><span class="p">(</span><span class="n">snt</span><span class="p">,</span> <span class="n">lan</span><span class="o">=</span><span class="s1">&#39;en&#39;</span><span class="p">,</span> <span class="n">ch_parser</span> <span class="o">=</span> <span class="s1">&#39;hit&#39;</span><span class="p">,</span> <span class="n">de_parser</span><span class="o">=</span><span class="s1">&#39;parzu&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    for german sentence, we use parzu, which is much better than stanford parser</span>
+<span class="sd">    for chinese sentence, we use hit.</span>
+<span class="sd">    :param snt: a string of sentence</span>
+<span class="sd">    :param lan: &#39;de&#39;,&#39;en&#39;,&#39;ch&#39;</span>
+<span class="sd">    :return: string in conll(10) format</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">lan</span> <span class="o">==</span> <span class="s1">&#39;ch&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">ch_parser</span> <span class="o">==</span> <span class="s1">&#39;hit&#39;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">get_ch_ldg</span><span class="p">(</span><span class="n">snt</span><span class="p">,</span> <span class="n">ch_parser</span><span class="o">=</span><span class="s1">&#39;hit&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">snt</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">snt</span><span class="p">)</span>
+            <span class="n">ch_seg_snt</span> <span class="o">=</span> <span class="n">segmenter</span><span class="o">.</span><span class="n">segment</span><span class="p">(</span><span class="n">snt</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;。&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">ch_seg_snt</span><span class="p">),</span> <span class="s1">&#39;+&#39;</span><span class="o">+</span><span class="n">ch_seg_snt</span><span class="o">+</span><span class="s1">&#39;+&#39;</span><span class="p">)</span>
+            <span class="c1">#ch_seg_snt = ch_seg_snt.encode(encoding=&#39;UTF-8&#39;)</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">dep_parser_cn</span><span class="o">.</span><span class="n">raw_parse</span><span class="p">(</span><span class="n">ch_seg_snt</span><span class="p">)</span>
+            <span class="n">dep</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">dep</span><span class="o">.</span><span class="n">to_conll</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">lan</span> <span class="o">==</span> <span class="s1">&#39;en&#39;</span><span class="p">:</span>
+        <span class="n">result</span> <span class="o">=</span> <span class="n">dep_parser_en</span><span class="o">.</span><span class="n">raw_parse</span><span class="p">(</span><span class="n">snt</span><span class="p">)</span>
+        <span class="n">dep</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">dep</span><span class="o">.</span><span class="n">to_conll</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">lan</span> <span class="o">==</span> <span class="s1">&#39;de&#39;</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">de_parser</span> <span class="o">==</span> <span class="s1">&#39;parzu&#39;</span><span class="p">:</span>
+            <span class="n">echo_process</span> <span class="o">=</span> <span class="n">Popen</span><span class="p">([</span><span class="s1">&#39;echo&#39;</span><span class="p">,</span> <span class="n">snt</span><span class="p">],</span> <span class="n">stdout</span><span class="o">=</span><span class="n">PIPE</span><span class="p">)</span>
+            <span class="n">parzu_process</span> <span class="o">=</span> <span class="n">Popen</span><span class="p">([</span><span class="s1">&#39;/Users/tdong/components/ParZu/parzu&#39;</span><span class="p">],</span>
+                                  <span class="n">stdin</span><span class="o">=</span><span class="n">echo_process</span><span class="o">.</span><span class="n">stdout</span><span class="p">,</span> <span class="n">stdout</span><span class="o">=</span><span class="n">PIPE</span><span class="p">)</span>
+            <span class="n">echo_process</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+            <span class="n">out</span><span class="p">,</span> <span class="n">err</span> <span class="o">=</span> <span class="n">parzu_process</span><span class="o">.</span><span class="n">communicate</span><span class="p">()</span>
+            <span class="k">return</span> <span class="n">out</span><span class="o">.</span><span class="n">decode</span><span class="p">(</span><span class="s2">&quot;utf-8&quot;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">result</span> <span class="o">=</span> <span class="n">dep_parser_de</span><span class="o">.</span><span class="n">raw_parse</span><span class="p">(</span><span class="n">snt</span><span class="p">)</span>
+            <span class="n">dep</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+            <span class="k">return</span> <span class="n">dep</span><span class="o">.</span><span class="n">to_conll</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Usage: &lt;sentence&gt;, lan=&quot;en&quot; or &quot;de&quot; or &quot;ch&quot;&#39;</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="test_parser"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.new_snt_to_ldg.test_parser">[docs]</a><span class="k">def</span> <span class="nf">test_parser</span><span class="p">():</span>
+    <span class="n">en_snt</span> <span class="o">=</span> <span class="s2">&quot;The quick brown fox jumps over the lazy dog.&quot;</span>
+    <span class="n">ch_snt</span> <span class="o">=</span> <span class="s2">&quot;今天是星期天&quot;</span>
+    <span class="n">de_snt</span> <span class="o">=</span> <span class="s2">&quot;Heute ist Sonntag&quot;</span>
+
+    <span class="n">ch_seg_snt</span> <span class="o">=</span> <span class="n">segmenter</span><span class="o">.</span><span class="n">segment</span><span class="p">(</span><span class="n">ch_snt</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">segmenter</span><span class="o">.</span><span class="n">segment</span><span class="p">(</span><span class="n">ch_snt</span><span class="p">))</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">dep_parser_en</span><span class="o">.</span><span class="n">raw_parse</span><span class="p">(</span><span class="n">en_snt</span><span class="p">)</span>
+    <span class="n">dep</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+    <span class="n">dep_en</span> <span class="o">=</span> <span class="n">dep</span><span class="o">.</span><span class="n">to_conll</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">dep_en</span><span class="p">)</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">dep_parser_de</span><span class="o">.</span><span class="n">raw_parse</span><span class="p">(</span><span class="n">de_snt</span><span class="p">)</span>
+    <span class="n">dep</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+    <span class="n">dep_de</span> <span class="o">=</span> <span class="n">dep</span><span class="o">.</span><span class="n">to_conll</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">dep_de</span><span class="p">))</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">dep_de</span><span class="p">)</span>
+
+    <span class="n">result</span> <span class="o">=</span> <span class="n">dep_parser_cn</span><span class="o">.</span><span class="n">raw_parse</span><span class="p">(</span><span class="n">ch_seg_snt</span><span class="p">)</span>
+    <span class="n">dep</span> <span class="o">=</span> <span class="nb">next</span><span class="p">(</span><span class="n">result</span><span class="p">)</span>
+    <span class="n">dep_ch</span> <span class="o">=</span> <span class="n">dep</span><span class="o">.</span><span class="n">to_conll</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">dep_ch</span><span class="p">)</span></div>
+
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="n">str_ch1</span> <span class="o">=</span> <span class="s1">&#39;国务院总理今天出访美国&#39;</span>
+    <span class="n">str_ch2</span> <span class="o">=</span> <span class="s1">&#39;他借了几本书。&#39;</span>
+    <span class="n">str_de1</span> <span class="o">=</span> <span class="s1">&#39;Jenes Mädchen ist sehr hübsch.&#39;</span>
+    <span class="n">str_en1</span> <span class="o">=</span> <span class="s1">&#39;In other words, counterfactual thinking influences how satisfied each athlete feels.&#39;</span>
+    <span class="c1">#dep_str = get_dep_str(str_ch1, lan=&#39;ch&#39;, ch_parser=&#39;hit&#39;)</span>
+    <span class="c1">#print(dep_str)</span>
+    <span class="c1">#dep_str = get_dep_str(str_en1, lan=&#39;en&#39;)</span>
+    <span class="c1">#print(dep_str)</span>
+    <span class="n">dep_str</span> <span class="o">=</span> <span class="n">get_dep_str</span><span class="p">(</span><span class="n">str_de1</span><span class="p">,</span> <span class="n">lan</span><span class="o">=</span><span class="s1">&#39;de&#39;</span><span class="p">,</span><span class="n">de_parser</span><span class="o">=</span><span class="s1">&#39;parzu&#39;</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">dep_str</span><span class="p">)</span>
+
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Tiansi Dong.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.9</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

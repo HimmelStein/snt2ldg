@@ -1,0 +1,228 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>snt2ldg.snt_ldg2db &#8212; sentence to raw dependency graph 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="top" title="sentence to raw dependency graph 0.1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for snt2ldg.snt_ldg2db</h1><div class="highlight"><pre>
+<span></span><span class="c1"># -*- coding: utf-8 -*-</span>
+<span class="kn">import</span> <span class="nn">codecs</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">sys</span>
+<span class="kn">from</span> <span class="nn">.db</span> <span class="k">import</span> <span class="n">insert_2snt_into_db_table</span>
+<span class="kn">from</span> <span class="nn">bs4</span> <span class="k">import</span> <span class="n">BeautifulSoup</span>
+<span class="kn">from</span> <span class="nn">.new_snt_to_ldg</span> <span class="k">import</span> <span class="n">get_dep_str</span>
+
+<span class="c1">#</span>
+<span class="c1"># following are raw bible files</span>
+<span class="c1">#</span>
+<span class="n">project_loc</span> <span class="o">=</span> <span class="s1">&#39;/Users/tdong/git/lg-flask/data&#39;</span>
+<span class="n">chinese_train_file</span> <span class="o">=</span> <span class="s1">&#39;hgb.txt&#39;</span>
+<span class="n">english_train_file</span> <span class="o">=</span> <span class="s1">&#39;bbe.txt&#39;</span>
+<span class="n">german_train_file</span> <span class="o">=</span> <span class="s1">&#39;Martin_Luther_Uebersetzung_1912.txt&#39;</span>
+
+<span class="c1">#</span>
+<span class="c1"># following are LDC2002T01 en-ch training files</span>
+<span class="c1"># chinese txt encoded in gb2312</span>
+<span class="c1">#</span>
+<span class="n">LDC2002T01_loc</span> <span class="o">=</span> <span class="s1">&#39;/Users/tdong/git/lg-flask/data/mt_chinese_v1&#39;</span>
+<span class="n">ch_loc</span> <span class="o">=</span> <span class="s1">&#39;source&#39;</span>
+<span class="n">en_loc</span> <span class="o">=</span> <span class="s1">&#39;translation&#39;</span>
+<span class="n">en_sub_loc</span> <span class="o">=</span> <span class="s1">&#39;t[a|b][0-9]&#39;</span>
+<span class="n">en_sub</span> <span class="o">=</span> <span class="s1">&#39;ta0&#39;</span>
+
+
+<span class="c1">#</span>
+<span class="c1"># load all LDC2002T01 paired ch-en sentences into Database</span>
+<span class="c1">#</span>
+<div class="viewcode-block" id="load_ldc_into_database"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.snt_ldg2db.load_ldc_into_database">[docs]</a><span class="k">def</span> <span class="nf">load_ldc_into_database</span><span class="p">(</span><span class="n">ldc</span> <span class="o">=</span> <span class="n">LDC2002T01_loc</span><span class="p">,</span> <span class="n">ch_loc</span> <span class="o">=</span> <span class="n">ch_loc</span><span class="p">,</span> <span class="n">en_loc</span> <span class="o">=</span> <span class="n">en_loc</span><span class="p">,</span> <span class="n">en_sub</span> <span class="o">=</span> <span class="n">en_sub</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    table ldc2002t01: id | fname | en_sub | seg_id  | ch_snt | en_snt | ch_ldg | ch_sdg | en_ldg | en_sdg</span>
+<span class="sd">    :param ldc:</span>
+<span class="sd">    :param ch_loc:</span>
+<span class="sd">    :param en_loc:</span>
+<span class="sd">    :param en_sub:</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">ch_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">LDC2002T01_loc</span><span class="p">,</span> <span class="n">ch_loc</span><span class="p">)</span>
+    <span class="n">en_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">LDC2002T01_loc</span><span class="p">,</span> <span class="n">en_loc</span><span class="p">,</span> <span class="n">en_sub</span><span class="p">)</span>
+    <span class="n">ch_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">ch_path</span><span class="p">)</span> <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">r&#39;.*\.sgm&#39;</span><span class="p">,</span> <span class="n">f</span><span class="p">)]</span>
+    <span class="n">en_files</span> <span class="o">=</span> <span class="p">[</span><span class="n">f</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">en_path</span><span class="p">)</span> <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="s1">r&#39;.*\.sgm&#39;</span><span class="p">,</span> <span class="n">f</span><span class="p">)]</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">ch_files</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">en_files</span><span class="p">):</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;paired directories contain different number of files&#39;</span><span class="p">)</span>
+        <span class="k">return</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">n</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">fname</span> <span class="ow">in</span> <span class="n">ch_files</span><span class="p">:</span>
+            <span class="n">ch_fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">ch_path</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
+            <span class="n">en_fname</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">en_path</span><span class="p">,</span> <span class="n">fname</span><span class="p">)</span>
+            <span class="k">try</span><span class="p">:</span>
+                <span class="n">ch_seg_lst</span> <span class="o">=</span> <span class="n">get_ldc_in_soup</span><span class="p">(</span><span class="n">ch_fname</span><span class="p">,</span> <span class="n">lan</span> <span class="o">=</span> <span class="s1">&#39;ch&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s1">&#39;seg&#39;</span><span class="p">)</span>
+                <span class="n">en_seg_lst</span> <span class="o">=</span> <span class="n">get_ldc_in_soup</span><span class="p">(</span><span class="n">en_fname</span><span class="p">,</span> <span class="n">lan</span> <span class="o">=</span> <span class="s1">&#39;en&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">find_all</span><span class="p">(</span><span class="s1">&#39;seg&#39;</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ch_seg_lst</span><span class="p">)):</span>
+                    <span class="n">n</span> <span class="o">+=</span> <span class="mi">1</span>
+                    <span class="n">ch_txt</span> <span class="o">=</span> <span class="n">ch_seg_lst</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get_text</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                    <span class="n">en_txt</span> <span class="o">=</span> <span class="n">en_seg_lst</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">get_text</span><span class="p">()</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">en_sub</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">ch_txt</span><span class="p">,</span> <span class="n">en_txt</span><span class="p">,</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+                    <span class="n">insert_2snt_into_db_table</span><span class="p">(</span><span class="n">db</span><span class="o">=</span><span class="s1">&#39;language_graph&#39;</span><span class="p">,</span> <span class="n">dbuser</span><span class="o">=</span><span class="s1">&#39;postgres&#39;</span><span class="p">,</span> <span class="n">table</span><span class="o">=</span><span class="s1">&#39;ldc2002t01&#39;</span><span class="p">,</span>
+                                              <span class="nb">id</span><span class="o">=</span><span class="n">n</span><span class="p">,</span> <span class="n">fname</span><span class="o">=</span><span class="n">fname</span><span class="p">,</span> <span class="n">en_sub</span><span class="o">=</span><span class="n">en_sub</span><span class="p">,</span> <span class="n">seg_id</span> <span class="o">=</span> <span class="n">i</span><span class="p">,</span> <span class="n">ch_snt</span><span class="o">=</span><span class="n">ch_txt</span><span class="p">,</span> <span class="n">en_snt</span><span class="o">=</span><span class="n">en_txt</span><span class="p">)</span>
+            <span class="k">except</span> <span class="ne">OSError</span> <span class="k">as</span> <span class="n">err</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;OS error: </span><span class="si">{0}</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">err</span><span class="p">))</span>
+            <span class="k">except</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Unexpected error:&quot;</span><span class="p">,</span> <span class="n">sys</span><span class="o">.</span><span class="n">exc_info</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span></div>
+
+
+<span class="c1">#</span>
+<span class="c1"># read LDC2002T01 chinese file</span>
+<span class="c1">#</span>
+<div class="viewcode-block" id="get_ldc_in_soup"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.snt_ldg2db.get_ldc_in_soup">[docs]</a><span class="k">def</span> <span class="nf">get_ldc_in_soup</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">lan</span><span class="o">=</span><span class="s1">&#39;ch&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param fname: must be the full file name wit path</span>
+<span class="sd">    :param lan: &#39;ch&#39; or &#39;en&#39;</span>
+<span class="sd">    :return: soup object</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">lan</span> <span class="o">==</span> <span class="s1">&#39;ch&#39;</span><span class="p">:</span>
+        <span class="n">fhd</span> <span class="o">=</span> <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">,</span> <span class="n">encoding</span><span class="o">=</span><span class="s1">&#39;gb2312&#39;</span><span class="p">)</span>
+        <span class="n">ch_txt</span> <span class="o">=</span> <span class="n">fhd</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">ch_txt</span><span class="p">,</span> <span class="s1">&#39;html.parser&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">soup</span>
+    <span class="k">elif</span> <span class="n">lan</span> <span class="o">==</span> <span class="s1">&#39;en&#39;</span><span class="p">:</span>
+        <span class="n">fhd</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span>
+        <span class="n">en_txt</span> <span class="o">=</span> <span class="n">fhd</span><span class="o">.</span><span class="n">read</span><span class="p">()</span>
+        <span class="n">soup</span> <span class="o">=</span> <span class="n">BeautifulSoup</span><span class="p">(</span><span class="n">en_txt</span><span class="p">,</span> <span class="s1">&#39;html.parser&#39;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">soup</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Usage: lan=&quot;ch&quot; or &quot;en&quot;&#39;</span><span class="p">)</span>
+        <span class="k">return</span></div>
+
+
+<div class="viewcode-block" id="read_train_file"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.snt_ldg2db.read_train_file">[docs]</a><span class="k">def</span> <span class="nf">read_train_file</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">encode</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    :param fname:</span>
+<span class="sd">    :param encode:</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">fhandle</span> <span class="o">=</span> <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">project_loc</span><span class="p">,</span> <span class="n">fname</span><span class="p">),</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encode</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">fhandle</span><span class="o">.</span><span class="n">readlines</span><span class="p">():</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">bbid</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="n">snt</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="n">lst</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lst</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">bbid</span> <span class="o">=</span> <span class="n">lst</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39; &#39;</span><span class="o">+</span><span class="n">lst</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="s1">&#39;:&#39;</span> <span class="ow">in</span> <span class="n">lst</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">bbid</span> <span class="o">=</span> <span class="n">lst</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">+</span><span class="s1">&#39; &#39;</span><span class="o">+</span><span class="n">lst</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">snt</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lst</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;**&#39;</span><span class="p">,</span> <span class="n">lst</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">bbid</span><span class="p">,</span> <span class="n">snt</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="test_reading_train_files"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.snt_ldg2db.test_reading_train_files">[docs]</a><span class="k">def</span> <span class="nf">test_reading_train_files</span><span class="p">():</span>
+    <span class="n">read_train_file</span><span class="p">(</span><span class="n">chinese_train_file</span><span class="p">,</span> <span class="n">encode</span><span class="o">=</span><span class="s2">&quot;gb2312&quot;</span><span class="p">)</span>
+    <span class="n">read_train_file</span><span class="p">(</span><span class="n">german_train_file</span><span class="p">,</span> <span class="n">encode</span><span class="o">=</span><span class="s1">&#39;ISO-8859-1&#39;</span><span class="p">)</span>
+    <span class="n">read_train_file</span><span class="p">(</span><span class="n">english_train_file</span><span class="p">)</span></div>
+
+
+
+<span class="c1">#</span>
+<span class="c1"># Postgres SQL</span>
+<span class="c1"># SELECT table_schema,table_name FROM information_schema.tables where table_schema=&#39;public&#39;</span>
+<span class="c1"># ORDER BY table_schema,table_name;</span>
+<span class="c1">#</span>
+
+<span class="k">if</span> <span class="n">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1">#read_train_file(chinese_train_file, encode=&quot;gb2312&quot;)</span>
+    <span class="c1">#read_train_file(german_train_file, encode=&#39;ISO-8859-1&#39;)</span>
+    <span class="c1">#read_train_file(english_train_file)</span>
+    <span class="c1">#insert_snt_into_db_table(chinese_train_file, encode=&#39;gb2312&#39;,  table=&#39;chbible&#39;)</span>
+    <span class="c1">#insert_snt_into_db_table(english_train_file,   table=&#39;enbible&#39;)</span>
+    <span class="c1">#insert_snt_into_db_table(german_train_file, encode=&#39;ISO-8859-1&#39;, table=&#39;debible&#39;)</span>
+    <span class="c1">#load_ldc_into_database(ldc=LDC2002T01_loc, ch_loc=ch_loc, en_loc=en_loc, en_sub=en_sub)</span>
+    <span class="c1">#copy_sqlite_table_into_postgres()</span>
+    <span class="c1">#load_ldg_into_table()</span>
+    <span class="c1">#load_bible_ldg_into_table()</span>
+    <span class="k">pass</span>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Tiansi Dong.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.9</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

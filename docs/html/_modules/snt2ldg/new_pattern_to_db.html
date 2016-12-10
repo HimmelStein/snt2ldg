@@ -1,0 +1,384 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>snt2ldg.new_pattern_to_db &#8212; sentence to raw dependency graph 0.1.0 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/alabaster.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.0',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="top" title="sentence to raw dependency graph 0.1.0 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" />
+   
+  <link rel="stylesheet" href="../../_static/custom.css" type="text/css" />
+  
+  
+  <meta name="viewport" content="width=device-width, initial-scale=0.9, maximum-scale=0.9" />
+
+  </head>
+  <body role="document">
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <h1>Source code for snt2ldg.new_pattern_to_db</h1><div class="highlight"><pre>
+<span></span><span class="kn">from</span> <span class="nn">.new_snt_to_ldg</span> <span class="k">import</span> <span class="n">get_dep_str</span>
+<span class="kn">from</span> <span class="nn">nltk.parse</span> <span class="k">import</span> <span class="n">DependencyGraph</span>
+<span class="kn">import</span> <span class="nn">nltk</span>
+<span class="kn">import</span> <span class="nn">records</span>
+<span class="kn">from</span> <span class="nn">copy</span> <span class="k">import</span> <span class="n">deepcopy</span>
+<span class="kn">from</span> <span class="nn">pprint</span> <span class="k">import</span> <span class="n">pprint</span>
+<span class="kn">from</span> <span class="nn">collections</span> <span class="k">import</span> <span class="n">Counter</span>
+
+
+
+<div class="viewcode-block" id="snt_has_words"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.new_pattern_to_db.snt_has_words">[docs]</a><span class="k">def</span> <span class="nf">snt_has_words</span><span class="p">(</span><span class="n">snt</span><span class="p">,</span> <span class="n">words</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    check whether sentence has words</span>
+<span class="sd">    :param snt: a string</span>
+<span class="sd">    :param words: a list of words</span>
+<span class="sd">    :return: boolean</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">wlst</span> <span class="o">=</span> <span class="n">nltk</span><span class="o">.</span><span class="n">word_tokenize</span><span class="p">(</span><span class="n">snt</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">words</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">word</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">wlst</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="make_word_list_from_phrase"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.new_pattern_to_db.make_word_list_from_phrase">[docs]</a><span class="k">def</span> <span class="nf">make_word_list_from_phrase</span><span class="p">(</span><span class="n">phrase</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    phrase is a string may containing words, and &#39;.&#39;</span>
+<span class="sd">    remove all &#39;.&#39;, and return a list of words</span>
+<span class="sd">    :param phrase:</span>
+<span class="sd">    :return: a list of words</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">phrase</span> <span class="o">=</span> <span class="n">phrase</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">nltk</span><span class="o">.</span><span class="n">word_tokenize</span><span class="p">(</span><span class="n">phrase</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="get_root_address_from_nltkg"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.new_pattern_to_db.get_root_address_from_nltkg">[docs]</a><span class="k">def</span> <span class="nf">get_root_address_from_nltkg</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">rootRels</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;root&#39;</span><span class="p">,</span> <span class="s1">&#39;HED&#39;</span><span class="p">]):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    get root address from an nltk graph instance</span>
+<span class="sd">    :param g:</span>
+<span class="sd">    :return: an integer</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rlt</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">g</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">g</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="s1">&#39;rel&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">rootRels</span><span class="p">:</span>
+            <span class="n">rlt</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">rlt</span></div>
+
+
+<div class="viewcode-block" id="get_address_of_word"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.new_pattern_to_db.get_address_of_word">[docs]</a><span class="k">def</span> <span class="nf">get_address_of_word</span><span class="p">(</span><span class="n">nltkg</span><span class="p">,</span> <span class="n">word</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    get all node addresses with &#39;word&#39;=word</span>
+<span class="sd">    :param nltkg:</span>
+<span class="sd">    :param word:</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rlt</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">nltkg</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">nltkg</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="n">rlt</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">rlt</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> appears in more than one place </span><span class="se">\n</span><span class="s2">&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">word</span><span class="p">))</span>
+    <span class="k">return</span> <span class="n">rlt</span></div>
+
+
+<div class="viewcode-block" id="get_addresses_from_child_to_ancestor"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.new_pattern_to_db.get_addresses_from_child_to_ancestor">[docs]</a><span class="k">def</span> <span class="nf">get_addresses_from_child_to_ancestor</span><span class="p">(</span><span class="n">g</span><span class="p">,</span> <span class="n">startAddress</span><span class="p">,</span> <span class="n">endAddress</span><span class="p">,</span> <span class="n">stop</span><span class="o">=</span><span class="p">[]):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    return addresses located between startAddress and endAddress, may be interrupted if encounters ids in stop list.</span>
+<span class="sd">    :param startAdress: start address</span>
+<span class="sd">    :param Endaddress: end address</span>
+<span class="sd">    :return: a list of address</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">rlt</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">stop</span><span class="p">:</span>
+        <span class="n">stop</span> <span class="o">=</span> <span class="n">get_root_address_from_nltkg</span><span class="p">(</span><span class="n">g</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="nb">type</span><span class="p">(</span><span class="n">endAddress</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">list</span>
+    <span class="n">currentAddress</span> <span class="o">=</span> <span class="n">startAddress</span>
+    <span class="k">while</span> <span class="n">currentAddress</span> <span class="o">!=</span> <span class="n">endAddress</span> <span class="ow">and</span> <span class="n">currentAddress</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">stop</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">currentAddress</span> <span class="o">!=</span> <span class="n">endAddress</span><span class="p">:</span>
+            <span class="n">rlt</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">currentAddress</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">currentAddress</span> <span class="ow">in</span> <span class="n">stop</span><span class="p">:</span>
+            <span class="k">break</span>
+        <span class="n">currentAddress</span> <span class="o">=</span> <span class="n">g</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">currentAddress</span><span class="p">][</span><span class="s1">&#39;head&#39;</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">currentAddress</span> <span class="o">==</span> <span class="n">endAddress</span><span class="p">:</span>
+        <span class="k">return</span> <span class="n">rlt</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">return</span> <span class="p">[]</span></div>
+
+
+<div class="viewcode-block" id="get_root_of_node"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.new_pattern_to_db.get_root_of_node">[docs]</a><span class="k">def</span> <span class="nf">get_root_of_node</span><span class="p">(</span><span class="n">nltkg</span><span class="p">,</span> <span class="n">nodeAddress</span><span class="p">,</span> <span class="n">rootRels</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;root&#39;</span><span class="p">,</span> <span class="s1">&#39;HED&#39;</span><span class="p">]):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    get root address of node with nodeAddress</span>
+<span class="sd">    :param nltkg:</span>
+<span class="sd">    :param address:</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">address</span> <span class="o">=</span> <span class="n">nodeAddress</span>
+    <span class="k">while</span> <span class="n">nltkg</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">address</span><span class="p">][</span><span class="s1">&#39;rel&#39;</span><span class="p">]</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">rootRels</span><span class="p">:</span>
+        <span class="n">address</span> <span class="o">=</span> <span class="n">nltkg</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">address</span><span class="p">][</span><span class="s1">&#39;head&#39;</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">address</span></div>
+
+
+<div class="viewcode-block" id="minimal_connected_graph"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.new_pattern_to_db.minimal_connected_graph">[docs]</a><span class="k">def</span> <span class="nf">minimal_connected_graph</span><span class="p">(</span><span class="n">nltkg</span><span class="p">,</span> <span class="n">wlst</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    create a new graph, which is a sub-graph of nltkg, and contains words in wlst</span>
+<span class="sd">    :process find the root address; find address of each word  in wlst, record back-trace from each word to root</span>
+<span class="sd">    :param nltkg: an instance of nltkg</span>
+<span class="sd">    :param wlst: a list of words</span>
+<span class="sd">    :return: a new graph</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">newg</span> <span class="o">=</span> <span class="n">deepcopy</span><span class="p">(</span><span class="n">nltkg</span><span class="p">)</span>
+    <span class="n">addressLst</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">rootAddress</span> <span class="o">=</span> <span class="n">get_root_address_from_nltkg</span><span class="p">(</span><span class="n">newg</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">wlst</span><span class="p">:</span>
+        <span class="n">wordAddress</span> <span class="o">=</span> <span class="n">get_address_of_word</span><span class="p">(</span><span class="n">newg</span><span class="p">,</span> <span class="n">word</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">address</span> <span class="ow">in</span> <span class="n">wordAddress</span><span class="p">:</span>
+            <span class="n">root</span> <span class="o">=</span> <span class="n">get_root_of_node</span><span class="p">(</span><span class="n">nltkg</span><span class="p">,</span> <span class="n">address</span><span class="p">)</span>
+            <span class="n">addressBetween</span> <span class="o">=</span> <span class="n">get_addresses_from_child_to_ancestor</span><span class="p">(</span><span class="n">newg</span><span class="p">,</span> <span class="n">address</span><span class="p">,</span> <span class="n">root</span><span class="p">,</span>  <span class="n">stop</span><span class="o">=</span><span class="n">rootAddress</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">root</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">addressLst</span><span class="p">:</span>
+                <span class="n">addressLst</span> <span class="o">+=</span> <span class="p">[</span><span class="n">root</span><span class="p">]</span>
+            <span class="n">addressLst</span> <span class="o">+=</span> <span class="p">[</span><span class="n">address</span><span class="p">]</span> <span class="o">+</span> <span class="n">addressBetween</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">newg</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">addressLst</span><span class="p">:</span>
+            <span class="n">newg</span><span class="o">.</span><span class="n">remove_by_address</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">newg</span></div>
+
+
+<div class="viewcode-block" id="minimal_connected_frame_graph"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.new_pattern_to_db.minimal_connected_frame_graph">[docs]</a><span class="k">def</span> <span class="nf">minimal_connected_frame_graph</span><span class="p">(</span><span class="n">nltkg</span><span class="p">,</span> <span class="n">wlst</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    extend minimal_connected_graph, if word in wlst is has frame word in its children</span>
+<span class="sd">    replace it with its v/a child</span>
+<span class="sd">    :param nltkg: an instance of nltkg</span>
+<span class="sd">    :param wlst: word list</span>
+<span class="sd">    :return: a new graph</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">g</span> <span class="o">=</span> <span class="n">minimal_connected_graph</span><span class="p">(</span><span class="n">nltkg</span><span class="p">,</span> <span class="n">wlst</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">address</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">nodes</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+        <span class="k">if</span> <span class="n">g</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">address</span><span class="p">][</span><span class="s1">&#39;word&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">wlst</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">get_children_addresses</span><span class="p">(</span><span class="n">nltkg</span><span class="p">,</span> <span class="n">address</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">is_frame_word</span><span class="p">(</span><span class="n">nltkg</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">key</span><span class="p">])</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_frame_word</span><span class="p">(</span><span class="n">g</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">address</span><span class="p">]):</span>
+                    <span class="n">g</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">=</span><span class="n">nltkg</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+    <span class="k">return</span> <span class="n">g</span></div>
+
+
+<div class="viewcode-block" id="get_children_addresses"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.new_pattern_to_db.get_children_addresses">[docs]</a><span class="k">def</span> <span class="nf">get_children_addresses</span><span class="p">(</span><span class="n">nltkg</span><span class="p">,</span> <span class="n">address</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    :param nltk:</span>
+<span class="sd">    :param address:</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">return</span> <span class="nb">sum</span><span class="p">(</span><span class="n">nltkg</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">address</span><span class="p">][</span><span class="s1">&#39;deps&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">(),[])</span></div>
+
+
+<div class="viewcode-block" id="is_frame_word"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.new_pattern_to_db.is_frame_word">[docs]</a><span class="k">def</span> <span class="nf">is_frame_word</span><span class="p">(</span><span class="n">nltkNode</span><span class="p">,</span> <span class="n">ffeat</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;V&#39;</span><span class="p">,</span> <span class="s1">&#39;A&#39;</span><span class="p">]):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    :param nltkNode:</span>
+<span class="sd">    :return: boolean</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">nltkNode</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">nltkNode</span><span class="p">[</span><span class="s1">&#39;tag&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span> <span class="ow">in</span> <span class="n">ffeat</span> <span class="ow">or</span> <span class="n">nltkNode</span><span class="p">[</span><span class="s1">&#39;ctag&#39;</span><span class="p">]</span> <span class="ow">in</span> <span class="n">ffeat</span><span class="p">:</span>
+        <span class="k">return</span> <span class="kc">True</span>
+    <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="nltkg_to_cnll"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.new_pattern_to_db.nltkg_to_cnll">[docs]</a><span class="k">def</span> <span class="nf">nltkg_to_cnll</span><span class="p">(</span><span class="n">nltkg</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    transform an nltk graph into cnll10 string</span>
+<span class="sd">    :param nltkg: a nltk graph</span>
+<span class="sd">    :return: cnll10 string of nltkg</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">cnll10</span><span class="o">=</span><span class="s2">&quot;&quot;</span>
+    <span class="n">pprint</span><span class="p">(</span><span class="n">nltkg</span><span class="o">.</span><span class="n">nodes</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">nltkg</span><span class="o">.</span><span class="n">nodes</span><span class="p">:</span>
+        <span class="n">node</span> <span class="o">=</span> <span class="n">nltkg</span><span class="o">.</span><span class="n">nodes</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;address&quot;</span><span class="p">,</span> <span class="s2">&quot;lemma&quot;</span><span class="p">,</span> <span class="s2">&quot;ctag&quot;</span><span class="p">,</span> <span class="s2">&quot;tag&quot;</span><span class="p">,</span> <span class="s2">&quot;feats&quot;</span><span class="p">,</span> <span class="s2">&quot;head&quot;</span><span class="p">,</span> <span class="s2">&quot;rel&quot;</span><span class="p">]:</span>
+            <span class="n">cnll10</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="si">{}</span><span class="s2"> &quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="s1">&#39;_&#39;</span><span class="p">))</span>
+        <span class="n">cnll10</span> <span class="o">+=</span> <span class="s2">&quot; _ _ </span><span class="se">\n</span><span class="s2">&quot;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">cnll10</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">cnll10</span></div>
+
+
+<div class="viewcode-block" id="create_conjunction_pattern"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.new_pattern_to_db.create_conjunction_pattern">[docs]</a><span class="k">def</span> <span class="nf">create_conjunction_pattern</span><span class="p">(</span><span class="n">conjStr</span><span class="p">,</span> <span class="n">sampleSnt</span><span class="p">,</span> <span class="n">lan</span><span class="o">=</span><span class="s1">&#39;de&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    ! for learning, conjStr appear in sampleSnt only in the expected sub-graph !</span>
+<span class="sd">    conjStr is a string of conjunction words, e.g. because, weil, not only...but also</span>
+<span class="sd">    sampleStr is a sample sentence containing conjStr</span>
+<span class="sd">    the function is to identify the graphical pattern of conjStr in the ldg of sampleStr</span>
+<span class="sd">    Step 1: get ldg (cnll10) of sampleSnt, transform into nltk format</span>
+<span class="sd">    Step 2: copy out the minimal connected sub-component of nltk graph containing words in conjStr and root</span>
+<span class="sd">    Step 3: transform back to cnll10 format</span>
+<span class="sd">    Step 4: print out cnll10, if needs, save to database</span>
+<span class="sd">    if saveDb is true, the result will be saved in database</span>
+<span class="sd">    :param conjStr: a string of conjunction words</span>
+<span class="sd">    :param sampleSnt: a sample usage of conjunction words</span>
+<span class="sd">    :param lan: language</span>
+<span class="sd">    :param saveDb: boolean</span>
+<span class="sd">    :return: cnll10 format of a sub-graph</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># conjStr = conjStr.upper()</span>
+    <span class="c1"># sampleSnt = sampleSnt.upper()</span>
+    <span class="n">cnll</span> <span class="o">=</span> <span class="n">get_dep_str</span><span class="p">(</span><span class="n">sampleSnt</span><span class="p">,</span><span class="n">lan</span><span class="o">=</span><span class="n">lan</span><span class="p">)</span>
+    <span class="n">cnll</span> <span class="o">=</span> <span class="n">cnll</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;_ _ _&#39;</span><span class="p">,</span> <span class="s1">&#39;_ _&#39;</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">cnll</span><span class="p">)</span>
+    <span class="n">nltkg</span> <span class="o">=</span> <span class="n">DependencyGraph</span><span class="p">(</span><span class="n">cnll</span><span class="p">)</span>
+    <span class="n">wlst</span> <span class="o">=</span> <span class="n">make_word_list_from_phrase</span><span class="p">(</span><span class="n">conjStr</span><span class="p">)</span>
+    <span class="k">assert</span> <span class="n">snt_has_words</span><span class="p">(</span><span class="n">sampleSnt</span><span class="p">,</span> <span class="n">wlst</span><span class="p">)</span>
+    <span class="n">subg</span> <span class="o">=</span> <span class="n">minimal_connected_graph</span><span class="p">(</span><span class="n">nltkg</span><span class="p">,</span> <span class="n">wlst</span><span class="p">)</span>
+    <span class="n">subgf</span> <span class="o">=</span> <span class="n">minimal_connected_frame_graph</span><span class="p">(</span><span class="n">nltkg</span><span class="p">,</span> <span class="n">wlst</span><span class="p">)</span>
+    <span class="n">cnllStr</span> <span class="o">=</span> <span class="n">nltkg_to_cnll</span><span class="p">(</span><span class="n">subg</span><span class="p">)</span>
+    <span class="n">cnllStr1</span> <span class="o">=</span> <span class="n">nltkg_to_cnll</span><span class="p">(</span><span class="n">subgf</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">cnllStr</span><span class="p">,</span> <span class="n">cnllStr1</span></div>
+
+
+<div class="viewcode-block" id="get_query_result_from_db"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.new_pattern_to_db.get_query_result_from_db">[docs]</a><span class="k">def</span> <span class="nf">get_query_result_from_db</span><span class="p">(</span><span class="n">database</span><span class="p">,</span> <span class="n">queryStr</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+
+<span class="sd">    :param database:</span>
+<span class="sd">    :param queryStr:</span>
+<span class="sd">    :return: a list of records, each record is a list</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">db</span> <span class="o">=</span> <span class="n">records</span><span class="o">.</span><span class="n">Database</span><span class="p">(</span><span class="n">database</span><span class="p">)</span>
+    <span class="n">rlt</span> <span class="o">=</span> <span class="p">[</span><span class="nb">list</span><span class="p">(</span><span class="nb">map</span><span class="p">(</span><span class="k">lambda</span> <span class="n">ele</span><span class="p">:</span> <span class="n">ele</span><span class="o">.</span><span class="n">strip</span><span class="p">(),</span> <span class="n">rd</span><span class="o">.</span><span class="n">as_dict</span><span class="p">()</span><span class="o">.</span><span class="n">values</span><span class="p">()))</span> <span class="k">for</span> <span class="n">rd</span> <span class="ow">in</span> <span class="n">db</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">queryStr</span><span class="p">)]</span>
+    <span class="k">return</span> <span class="n">rlt</span></div>
+
+
+<div class="viewcode-block" id="is_valid_sample"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.new_pattern_to_db.is_valid_sample">[docs]</a><span class="k">def</span> <span class="nf">is_valid_sample</span><span class="p">(</span><span class="n">phrase</span><span class="p">,</span> <span class="n">snt</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    snt is a valid sample for phrase, if phrase appears in snt, words of phrase only appear in</span>
+<span class="sd">    the phrase.</span>
+<span class="sd">    :param phrase:</span>
+<span class="sd">    :param snt:</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">phrase0</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">phrase</span><span class="o">.</span><span class="n">split</span><span class="p">())</span>
+    <span class="n">snt0</span> <span class="o">=</span> <span class="n">nltk</span><span class="o">.</span><span class="n">word_tokenize</span><span class="p">(</span><span class="n">snt</span><span class="p">)</span>
+    <span class="k">while</span> <span class="s1">&#39;..&#39;</span> <span class="ow">in</span> <span class="n">phrase0</span><span class="p">:</span>
+        <span class="n">phrase0</span> <span class="o">=</span> <span class="n">phrase0</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;..&#39;</span><span class="p">,</span> <span class="s1">&#39;.&#39;</span><span class="p">)</span>
+    <span class="n">phraseParts</span> <span class="o">=</span> <span class="n">phrase0</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">part</span> <span class="ow">in</span> <span class="n">phraseParts</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">part</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">snt0</span><span class="p">:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+    <span class="n">phrase0</span> <span class="o">=</span> <span class="n">phrase0</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;.&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span>
+    <span class="n">wlst</span> <span class="o">=</span> <span class="n">nltk</span><span class="o">.</span><span class="n">word_tokenize</span><span class="p">(</span><span class="n">phrase0</span><span class="p">)</span>
+    <span class="n">wDic</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">wlst</span><span class="p">)</span>
+    <span class="n">sDic</span> <span class="o">=</span> <span class="n">Counter</span><span class="p">(</span><span class="n">snt0</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">word</span> <span class="ow">in</span> <span class="n">wDic</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">if</span> <span class="n">sDic</span><span class="p">[</span><span class="n">word</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">wDic</span><span class="p">[</span><span class="n">word</span><span class="p">]:</span>
+            <span class="k">return</span> <span class="kc">False</span>
+    <span class="k">return</span> <span class="kc">True</span></div>
+
+
+<div class="viewcode-block" id="do_transaction"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.new_pattern_to_db.do_transaction">[docs]</a><span class="k">def</span> <span class="nf">do_transaction</span><span class="p">(</span><span class="n">database</span><span class="p">,</span> <span class="n">queryTranscation</span><span class="p">):</span>
+    <span class="n">db</span> <span class="o">=</span> <span class="n">records</span><span class="o">.</span><span class="n">Database</span><span class="p">(</span><span class="n">database</span><span class="p">)</span>
+    <span class="n">tx</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span>
+    <span class="k">try</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="n">queryTranscation</span><span class="p">)</span>
+        <span class="n">db</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">queryTranscation</span><span class="p">)</span>
+        <span class="n">tx</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+    <span class="k">except</span><span class="p">:</span>
+        <span class="n">tx</span><span class="o">.</span><span class="n">rollback</span><span class="p">()</span>
+        <span class="k">return</span> <span class="kc">False</span></div>
+
+
+<div class="viewcode-block" id="learn_phrase_patterns"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.new_pattern_to_db.learn_phrase_patterns">[docs]</a><span class="k">def</span> <span class="nf">learn_phrase_patterns</span><span class="p">(</span><span class="n">lan</span><span class="o">=</span><span class="s1">&#39;en&#39;</span><span class="p">,</span> <span class="n">database</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">phraseQuery</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">sampleQuery</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">queryFormat</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    we know a phrase, and (search for) sample sentences containing this phrase.</span>
+<span class="sd">    get ldg pattern of this phrase, and save phrase,sample sentence, pattern into pattern-dic table in database</span>
+<span class="sd">    ! words in the phrase shall appear only in the phrases !, otherwise, that is a bad sample, not choose as a sample</span>
+<span class="sd">    Step 1: get phrase lists</span>
+<span class="sd">    Step 2: get sample lists</span>
+<span class="sd">    Step 3: for each phrase in phrase list:</span>
+<span class="sd">              for each sample in list:</span>
+<span class="sd">                   if (1) phrase appears in sample, and (2) phrase words only appear in phrase</span>
+<span class="sd">                        cnllStr, cnllStr1 = create_conjunction_pattern(phrase, sample, lan=lan, saveDb=True)</span>
+<span class="sd">                        save cnllStr and cnllStr1 into database</span>
+<span class="sd">                        increase counter</span>
+<span class="sd">    :param lan:</span>
+<span class="sd">    :param database: name of the database</span>
+<span class="sd">    :param phraseQuery:</span>
+<span class="sd">    :param sampleQuery:</span>
+<span class="sd">    :param saveQueryFormat:</span>
+<span class="sd">    :return: number of phrase patterns learned</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">phraseLst</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">get_query_result_from_db</span><span class="p">(</span><span class="n">database</span><span class="p">,</span> <span class="n">phraseQuery</span><span class="p">),</span> <span class="p">[])</span>
+    <span class="n">sampleLst</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">get_query_result_from_db</span><span class="p">(</span><span class="n">database</span><span class="p">,</span> <span class="n">sampleQuery</span><span class="p">),</span> <span class="p">[])</span>
+    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">phrase</span> <span class="ow">in</span> <span class="n">phraseLst</span><span class="p">:</span>
+        <span class="k">for</span> <span class="n">snt</span> <span class="ow">in</span> <span class="n">sampleLst</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">is_valid_sample</span><span class="p">(</span><span class="n">phrase</span><span class="p">,</span> <span class="n">snt</span><span class="p">):</span>
+                <span class="n">cnllStr</span><span class="p">,</span> <span class="n">cnllStr1</span> <span class="o">=</span> <span class="n">create_conjunction_pattern</span><span class="p">(</span><span class="n">phrase</span><span class="p">,</span> <span class="n">snt</span><span class="p">,</span> <span class="n">lan</span><span class="o">=</span><span class="n">lan</span><span class="p">)</span>
+                <span class="n">cnllStr</span> <span class="o">=</span> <span class="n">cnllStr</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;*&#39;</span><span class="p">)</span>
+                <span class="n">cnllStr1</span> <span class="o">=</span> <span class="n">cnllStr1</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39;*&#39;</span><span class="p">)</span>
+                <span class="n">do_transaction</span><span class="p">(</span><span class="n">database</span><span class="p">,</span> <span class="n">queryFormat</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">count</span><span class="p">,</span> <span class="n">phrase</span><span class="p">,</span> <span class="n">cnllStr</span><span class="p">,</span> <span class="n">cnllStr1</span><span class="p">,</span> <span class="n">snt</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+                <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="k">return</span> <span class="n">count</span></div>
+
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="main navigation">
+        <div class="sphinxsidebarwrapper"><div class="relations">
+<h3>Related Topics</h3>
+<ul>
+  <li><a href="../../index.html">Documentation overview</a><ul>
+  <li><a href="../index.html">Module code</a><ul>
+  </ul></li>
+  </ul></li>
+</ul>
+</div>
+<div id="searchbox" style="display: none" role="search">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <div><input type="text" name="q" /></div>
+      <div><input type="submit" value="Go" /></div>
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="footer">
+      &copy;2016, Tiansi Dong.
+      
+      |
+      Powered by <a href="http://sphinx-doc.org/">Sphinx 1.4.9</a>
+      &amp; <a href="https://github.com/bitprophet/alabaster">Alabaster 0.7.9</a>
+      
+    </div>
+
+    
+
+    
+  </body>
+</html>

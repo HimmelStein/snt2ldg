@@ -45,7 +45,10 @@
   <h1>Source code for snt2ldg.db</h1><div class="highlight"><pre>
 <span></span>
 <span class="kn">import</span> <span class="nn">records</span>
-
+<span class="kn">import</span> <span class="nn">codecs</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">from</span> <span class="nn">.new_snt_to_ldg</span> <span class="k">import</span> <span class="n">get_dep_str</span>
+<span class="kn">from</span> <span class="nn">.pickle_util</span> <span class="k">import</span> <span class="n">get_bible_pickle</span>
 <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">postgres database: langauge_graph</span>
 <span class="sd">tables: chbible, debible, enbible, ldc200201_back, ldc2002t01, pons, pons_back</span>
@@ -77,10 +80,40 @@
     <span class="p">]</span>
 
 
+<div class="viewcode-block" id="sample_snt_to_ldg_in_table"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.db.sample_snt_to_ldg_in_table">[docs]</a><span class="k">def</span> <span class="nf">sample_snt_to_ldg_in_table</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">table</span><span class="o">=</span><span class="s1">&#39;pons&#39;</span><span class="p">,</span> <span class="n">lan</span><span class="o">=</span><span class="s1">&#39;ch&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    id range from the table</span>
+<span class="sd">    :param id:</span>
+<span class="sd">    :param table:</span>
+<span class="sd">    :param lan:</span>
+<span class="sd">    :return: a graph in cnll10 format</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">global</span> <span class="n">psqlDataBase</span>
+    <span class="n">tableInfo</span> <span class="o">=</span> <span class="n">find_table</span><span class="p">(</span><span class="n">table</span><span class="o">=</span><span class="n">table</span><span class="p">,</span> <span class="n">lan</span><span class="o">=</span><span class="n">lan</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">tableInfo</span><span class="p">:</span>
+        <span class="n">db</span> <span class="o">=</span> <span class="n">records</span><span class="o">.</span><span class="n">Database</span><span class="p">(</span><span class="n">psqlDataBase</span><span class="p">)</span>
+        <span class="n">ldgColumn</span> <span class="o">=</span> <span class="n">tableInfo</span><span class="p">[</span><span class="s1">&#39;ldg&#39;</span><span class="p">]</span>
+        <span class="n">sqlStr</span> <span class="o">=</span> <span class="s2">&quot;SELECT &quot;</span> <span class="o">+</span> <span class="n">ldgColumn</span> <span class="o">+</span> <span class="s2">&quot; from &quot;</span> <span class="o">+</span> <span class="n">table</span>
+        <span class="n">rows</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">sqlStr</span><span class="p">)</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">rows</span><span class="p">[</span><span class="nb">id</span><span class="p">]</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="n">ldgColumn</span><span class="p">)</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="k">return</span> <span class="s2">&quot;&quot;</span>
+    <span class="k">return</span> <span class="s2">&quot;&quot;</span></div>
+
+
+<div class="viewcode-block" id="find_table"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.db.find_table">[docs]</a><span class="k">def</span> <span class="nf">find_table</span><span class="p">(</span><span class="n">table</span><span class="o">=</span><span class="s1">&#39;pons&#39;</span><span class="p">,</span> <span class="n">lan</span><span class="o">=</span><span class="s1">&#39;ch&#39;</span><span class="p">):</span>
+    <span class="k">global</span> <span class="n">table_kdic</span>
+    <span class="k">for</span> <span class="n">dic</span> <span class="ow">in</span> <span class="n">table_kdic</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">dic</span><span class="p">[</span><span class="s1">&#39;lan&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">lan</span> <span class="ow">and</span> <span class="n">dic</span><span class="p">[</span><span class="s1">&#39;table&#39;</span><span class="p">]</span> <span class="o">==</span> <span class="n">table</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">dic</span>
+    <span class="k">return</span> <span class="kc">False</span></div>
+
+
 <div class="viewcode-block" id="get_raw_ldg_with_id_from_pons"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.db.get_raw_ldg_with_id_from_pons">[docs]</a><span class="k">def</span> <span class="nf">get_raw_ldg_with_id_from_pons</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">table</span><span class="o">=</span><span class="s1">&#39;PONS&#39;</span><span class="p">,</span> <span class="n">lan</span><span class="o">=</span><span class="s1">&#39;ch&#39;</span><span class="p">):</span>
     <span class="k">assert</span> <span class="n">table</span> <span class="o">==</span> <span class="s1">&#39;PONS&#39;</span>
     <span class="k">global</span> <span class="n">table_kdic</span><span class="p">,</span> <span class="n">psqlDataBase</span><span class="p">,</span> <span class="n">sqliteDataBase</span>
-    <span class="n">db</span> <span class="o">=</span> <span class="n">records</span><span class="o">.</span><span class="n">Database</span><span class="p">(</span><span class="n">psqlDataBase</span><span class="p">)</span>
+    <span class="n">db</span> <span class="o">=</span> <span class="n">records</span><span class="o">.</span><span class="n">Database</span><span class="p">(</span><span class="n">psqlDataBase</span><span class="p">,</span> <span class="n">user</span><span class="o">=</span><span class="s2">&quot;Postgre&quot;</span><span class="p">)</span>
     <span class="k">if</span> <span class="n">table</span> <span class="o">==</span> <span class="s1">&#39;PONS&#39;</span> <span class="ow">and</span> <span class="n">lan</span> <span class="o">==</span> <span class="s1">&#39;ch&#39;</span><span class="p">:</span>
         <span class="n">sql_str</span> <span class="o">=</span> <span class="s2">&quot;SELECT ch_snt, ch_ldg FROM &quot;</span><span class="o">+</span> <span class="n">table</span> <span class="o">+</span> <span class="s2">&quot; where id=&quot;</span><span class="o">+</span><span class="nb">str</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span>
     <span class="k">elif</span> <span class="n">table</span> <span class="o">==</span> <span class="s1">&#39;PONS&#39;</span> <span class="ow">and</span> <span class="n">lan</span> <span class="o">==</span> <span class="s1">&#39;de&#39;</span><span class="p">:</span>
@@ -117,6 +150,286 @@
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">db</span> <span class="o">=</span> <span class="n">records</span><span class="o">.</span><span class="n">Database</span><span class="p">(</span><span class="n">dbname</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">db</span><span class="o">.</span><span class="n">get_table_names</span><span class="p">()</span></div>
+
+
+
+<div class="viewcode-block" id="insert_2snt_into_db_table"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.db.insert_2snt_into_db_table">[docs]</a><span class="k">def</span> <span class="nf">insert_2snt_into_db_table</span><span class="p">(</span><span class="n">db</span><span class="o">=</span><span class="s1">&#39;language_graph&#39;</span><span class="p">,</span> <span class="n">dbuser</span><span class="o">=</span><span class="s1">&#39;postgres&#39;</span><span class="p">,</span> <span class="n">table</span><span class="o">=</span><span class="s1">&#39;ldc2002t01&#39;</span><span class="p">,</span>
+                              <span class="nb">id</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span> <span class="n">fname</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">en_sub</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">seg_id</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">ch_snt</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">en_snt</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        table ldc2002t01: id | fname | en_sub |  seg_id  |ch_snt | en_snt | ch_ldg | ch_sdg | en_ldg | en_sdg</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">db</span> <span class="o">=</span> <span class="n">records</span><span class="o">.</span><span class="n">Database</span><span class="p">(</span><span class="n">psqlDataBase</span><span class="p">)</span>
+    <span class="n">ch_snt</span> <span class="o">=</span> <span class="n">ch_snt</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;</span><span class="se">\&#39;</span><span class="s2">&quot;</span><span class="p">)</span>
+    <span class="n">en_snt</span> <span class="o">=</span> <span class="n">en_snt</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;&#39;&#39;&quot;</span><span class="p">)</span>
+    <span class="n">sql_str</span> <span class="o">=</span> <span class="s2">&quot;INSERT INTO &quot;</span> <span class="o">+</span> <span class="n">table</span> <span class="o">+</span> <span class="s2">&quot;(id, fname, en_sub,  seg_id, ch_snt, en_snt) VALUES(</span><span class="si">{0}</span><span class="s2">, &#39;</span><span class="si">{1}</span><span class="s2">&#39;, &#39;</span><span class="si">{2}</span><span class="s2">&#39;, </span><span class="si">{3}</span><span class="s2">, &#39;</span><span class="si">{4}</span><span class="s2">&#39;, &#39;</span><span class="si">{5}</span><span class="s2">&#39;)&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">id</span><span class="p">,</span> <span class="n">fname</span><span class="p">,</span> <span class="n">en_sub</span><span class="p">,</span> <span class="n">seg_id</span><span class="p">,</span> <span class="n">ch_snt</span><span class="p">,</span> <span class="n">en_snt</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">sql_str</span><span class="p">)</span>
+    <span class="n">db</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">sql_str</span><span class="p">)</span></div>
+
+
+
+
+<div class="viewcode-block" id="insert_snt_into_db_table"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.db.insert_snt_into_db_table">[docs]</a><span class="k">def</span> <span class="nf">insert_snt_into_db_table</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">encode</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">db</span><span class="o">=</span><span class="s1">&#39;language_graph&#39;</span><span class="p">,</span> <span class="n">dbuser</span><span class="o">=</span><span class="s1">&#39;postgres&#39;</span><span class="p">,</span> <span class="n">table</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    table ldc2002t01: id | fname | en_sub | ch_snt | en_snt | ch_ldg | ch_sdg | en_ldg | en_sdg</span>
+<span class="sd">    table chbible: id | bbid | snt | snt_lg | snt_sdg</span>
+<span class="sd">    table debible: id | bbid | snt | snt_lg | snt_sdg</span>
+<span class="sd">    table enbible: id | bbid | snt | snt_lg | snt_sdg</span>
+
+<span class="sd">    :param fname:</span>
+<span class="sd">    :param encode:</span>
+<span class="sd">    :param db:</span>
+<span class="sd">    :param dbuser:</span>
+<span class="sd">    :param table:</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">db</span> <span class="o">=</span> <span class="n">records</span><span class="o">.</span><span class="n">Database</span><span class="p">(</span><span class="n">psqlDataBase</span><span class="p">)</span>
+    <span class="n">fhandle</span> <span class="o">=</span> <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="n">fname</span><span class="p">),</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encode</span><span class="p">)</span>
+    <span class="n">i</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">fhandle</span><span class="o">.</span><span class="n">readlines</span><span class="p">():</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">bbid</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="n">snt</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="n">lst</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lst</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">bbid</span> <span class="o">=</span> <span class="n">lst</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="n">lst</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="s1">&#39;:&#39;</span> <span class="ow">in</span> <span class="n">lst</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="n">bbid</span> <span class="o">=</span> <span class="n">lst</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="n">lst</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">snt</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lst</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;**&#39;</span><span class="p">,</span> <span class="n">lst</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">bbid</span><span class="p">,</span> <span class="n">snt</span><span class="p">)</span>
+            <span class="n">db</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;INSERT INTO &quot;</span><span class="o">+</span><span class="n">table</span><span class="o">+</span><span class="s2">&quot;(id, bbid, snt) VALUES(</span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">, </span><span class="si">%s</span><span class="s2">)&quot;</span><span class="p">,(</span><span class="n">i</span><span class="p">,</span> <span class="n">bbid</span><span class="p">,</span> <span class="n">snt</span><span class="p">))</span>
+            <span class="n">i</span> <span class="o">+=</span> <span class="mi">1</span></div>
+
+
+
+<div class="viewcode-block" id="insert_lg_into_table"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.db.insert_lg_into_table">[docs]</a><span class="k">def</span> <span class="nf">insert_lg_into_table</span><span class="p">(</span><span class="n">fname</span><span class="p">,</span> <span class="n">lan</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span> <span class="n">encode</span><span class="o">=</span><span class="s1">&#39;utf-8&#39;</span><span class="p">,</span> <span class="n">db</span><span class="o">=</span><span class="s1">&#39;language_graph&#39;</span><span class="p">,</span> <span class="n">dbuser</span><span class="o">=</span><span class="s1">&#39;postgres&#39;</span><span class="p">,</span> <span class="n">table</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    ldg is the conll 10 format</span>
+<span class="sd">    :param fname:</span>
+<span class="sd">    :param lan:</span>
+<span class="sd">    :param encode:</span>
+<span class="sd">    :param db:</span>
+<span class="sd">    :param dbuser:</span>
+<span class="sd">    :param table:</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">db</span> <span class="o">=</span> <span class="n">records</span><span class="o">.</span><span class="n">Database</span><span class="p">(</span><span class="n">psqlDataBase</span><span class="p">)</span>
+    <span class="n">fhandle</span> <span class="o">=</span> <span class="n">codecs</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="s2">&quot;..&quot;</span><span class="p">,</span> <span class="n">fname</span><span class="p">),</span> <span class="s2">&quot;r&quot;</span><span class="p">,</span> <span class="n">encode</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">fhandle</span><span class="o">.</span><span class="n">readlines</span><span class="p">():</span>
+            <span class="n">line</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">strip</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="n">bbid</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="n">snt</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="n">lst</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">lst</span><span class="p">)</span> <span class="o">&lt;</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">bbid</span> <span class="o">=</span> <span class="n">lst</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="n">lst</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">elif</span> <span class="s1">&#39;:&#39;</span> <span class="ow">in</span> <span class="n">lst</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="n">bbid</span> <span class="o">=</span> <span class="n">lst</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="n">lst</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                <span class="n">snt</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">lst</span><span class="p">[</span><span class="mi">2</span><span class="p">:])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;**&#39;</span><span class="p">,</span> <span class="n">lst</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="n">bbid</span><span class="p">,</span> <span class="n">snt</span><span class="p">)</span>
+            <span class="n">lg</span> <span class="o">=</span> <span class="n">get_dep_str</span><span class="p">(</span><span class="n">snt</span><span class="p">,</span> <span class="n">lan</span><span class="o">=</span><span class="n">lan</span><span class="p">)</span>
+            <span class="n">db</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;INSERT INTO &quot;</span> <span class="o">+</span> <span class="n">table</span> <span class="o">+</span> <span class="s2">&quot;(snt_lg) VALUES(</span><span class="si">%s</span><span class="s2">) where bbid=</span><span class="si">%s</span><span class="s2">&quot;</span><span class="p">,</span> <span class="p">(</span><span class="n">lg</span><span class="p">,</span> <span class="n">bbid</span><span class="p">))</span></div>
+
+
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">def copy_sqlite_table_into_postgres():</span>
+<span class="sd">    #</span>
+<span class="sd">    # To do</span>
+<span class="sd">    # load snt table into postgres</span>
+<span class="sd">    # :return:</span>
+<span class="sd">    #</span>
+<span class="sd">    try:</span>
+<span class="sd">        con = psycopg2.connect(host=&#39;localhost&#39;, database=&quot;language_graph&quot;, user=&quot;postgres&quot;)</span>
+
+<span class="sd">        print(&#39;connecting postgre&#39;)</span>
+<span class="sd">        cur = con.cursor()</span>
+<span class="sd">        import sqlite3</span>
+<span class="sd">        conn_sqlite = sqlite3.connect(os.path.join(&quot;..&quot;, &#39;PONS.db&#39;))</span>
+<span class="sd">        c_sqlite = conn_sqlite.cursor()</span>
+<span class="sd">        for row in c_sqlite.execute(&quot;SELECT * FROM snt&quot;):</span>
+<span class="sd">            print(row)</span>
+<span class="sd">            id = row[0]</span>
+<span class="sd">            ch_snt = row[2]</span>
+<span class="sd">            de_snt = row[1]</span>
+<span class="sd">            sql_str = &quot;INSERT INTO pons (id, ch_snt, de_snt) VALUES({0}, &#39;{1}&#39;, &#39;{2}&#39;)&quot;.format(id,  ch_snt, de_snt)</span>
+<span class="sd">            print(sql_str)</span>
+<span class="sd">            cur.execute(sql_str)</span>
+<span class="sd">        con.commit()</span>
+<span class="sd">    except psycopg2.DatabaseError:</span>
+<span class="sd">        if con:</span>
+<span class="sd">            con.rollback()</span>
+<span class="sd">        print(&#39;Error %s&#39; % psycopg2.DatabaseError)</span>
+<span class="sd">        sys.exit(1)</span>
+<span class="sd">    finally:</span>
+<span class="sd">        if con:</span>
+<span class="sd">            con.close()</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+
+<span class="c1">#</span>
+<span class="c1"># load LDG to three tables</span>
+<span class="c1">#</span>
+<div class="viewcode-block" id="load_ldg_into_table"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.db.load_ldg_into_table">[docs]</a><span class="k">def</span> <span class="nf">load_ldg_into_table</span><span class="p">(</span><span class="n">lan</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    table 1: chbible: id | bbid | snt | snt_lg | snt_sdg</span>
+<span class="sd">    table 2: debible: id | bbid | snt | snt_lg | snt_sdg</span>
+<span class="sd">    table 3: enbible: id | bbid | snt | snt_lg | snt_sdg</span>
+<span class="sd">    table 4: pons:    id | ch_snt | de_snt | ch_ldg | ch_sdg | de_ldg | de_sdg</span>
+<span class="sd">    table 5: ldc2002t01: id | fname | en_sub | ch_snt | en_snt | seg_id | ch_ldg | ch_sdg | en_ldg | en_sdg</span>
+<span class="sd">    :param lan:</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">batch_lst</span> <span class="o">=</span><span class="p">[</span>
+        <span class="c1">#{&quot;lan&quot;: &quot;de&quot;,  &quot;table&quot;: &quot;pons&quot;,  &quot;snt&quot;: &quot;de_snt&quot;,  &quot;ldg&quot;: &quot;de_ldg&quot;},</span>
+        <span class="p">{</span><span class="s2">&quot;lan&quot;</span><span class="p">:</span> <span class="s2">&quot;ch&quot;</span><span class="p">,</span> <span class="s2">&quot;table&quot;</span><span class="p">:</span> <span class="s2">&quot;pons&quot;</span><span class="p">,</span> <span class="s2">&quot;snt&quot;</span><span class="p">:</span> <span class="s2">&quot;ch_snt&quot;</span><span class="p">,</span> <span class="s2">&quot;ldg&quot;</span><span class="p">:</span> <span class="s2">&quot;ch_ldg&quot;</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">&quot;lan&quot;</span><span class="p">:</span> <span class="s2">&quot;ch&quot;</span><span class="p">,</span>  <span class="s2">&quot;table&quot;</span><span class="p">:</span> <span class="s2">&quot;ldc2002t01&quot;</span><span class="p">,</span>  <span class="s2">&quot;snt&quot;</span><span class="p">:</span> <span class="s2">&quot;ch_snt&quot;</span><span class="p">,</span>  <span class="s2">&quot;ldg&quot;</span><span class="p">:</span> <span class="s2">&quot;ch_ldg&quot;</span><span class="p">},</span>
+        <span class="c1">#{&quot;lan&quot;: &quot;en&quot;,  &quot;table&quot;: &quot;ldc2002t01&quot;, &quot;snt&quot;: &quot;en_snt&quot;,  &quot;ldg&quot;: &quot;en_ldg&quot;},</span>
+        <span class="c1">#{&quot;lan&quot;: &quot;de&quot;, &quot;table&quot;: &quot;debible&quot;, &quot;snt&quot;: &quot;snt&quot;, &quot;ldg&quot;: &quot;snt_lg&quot;},</span>
+        <span class="c1">#{&quot;lan&quot;: &quot;ch&quot;, &quot;table&quot;: &quot;chbible&quot;, &quot;snt&quot;: &quot;snt&quot;, &quot;ldg&quot;: &quot;snt_lg&quot;},</span>
+        <span class="c1">#{&quot;lan&quot;: &quot;en&quot;, &quot;table&quot;: &quot;enbible&quot;, &quot;snt&quot;: &quot;snt&quot;, &quot;ldg&quot;: &quot;snt_lg&quot;},</span>
+        <span class="p">]</span>
+    <span class="n">db</span> <span class="o">=</span> <span class="n">records</span><span class="o">.</span><span class="n">Database</span><span class="p">(</span><span class="n">psqlDataBase</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">dic</span> <span class="ow">in</span> <span class="n">batch_lst</span><span class="p">:</span>
+            <span class="n">lan</span> <span class="o">=</span> <span class="n">dic</span><span class="p">[</span><span class="s1">&#39;lan&#39;</span><span class="p">]</span>
+            <span class="n">table</span> <span class="o">=</span> <span class="n">dic</span><span class="p">[</span><span class="s1">&#39;table&#39;</span><span class="p">]</span>
+            <span class="n">snt</span> <span class="o">=</span> <span class="n">dic</span><span class="p">[</span><span class="s1">&#39;snt&#39;</span><span class="p">]</span>
+            <span class="n">ldg_col</span> <span class="o">=</span> <span class="n">dic</span><span class="p">[</span><span class="s1">&#39;ldg&#39;</span><span class="p">]</span>
+            <span class="n">rows</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;SELECT id,&quot;</span> <span class="o">+</span> <span class="n">snt</span> <span class="o">+</span><span class="s2">&quot;, &quot;</span><span class="o">+</span><span class="n">ldg_col</span><span class="o">+</span> <span class="s2">&quot; FROM &quot;</span><span class="o">+</span> <span class="n">table</span> <span class="p">)</span>
+            <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">rows</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="nb">type</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">]))</span>
+                <span class="k">if</span> <span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">row</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+                    <span class="nb">id</span> <span class="o">=</span> <span class="n">row</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="n">ldg</span> <span class="o">=</span> <span class="n">get_dep_str</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">lan</span><span class="o">=</span><span class="n">lan</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39; * &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;&#39;&#39;&quot;</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">dic</span><span class="p">,</span> <span class="n">row</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">ldg</span><span class="p">)</span>
+                    <span class="n">sql_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;update </span><span class="si">{0}</span><span class="s2"> set </span><span class="si">{1}</span><span class="s2"> = &#39;</span><span class="si">{2}</span><span class="s2">&#39; where id = </span><span class="si">{3}</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">table</span><span class="p">,</span> <span class="n">ldg_col</span><span class="p">,</span> <span class="n">ldg</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">sql_str</span><span class="p">)</span>
+                    <span class="n">db</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">sql_str</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="load_bible_ldg_into_table"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.db.load_bible_ldg_into_table">[docs]</a><span class="k">def</span> <span class="nf">load_bible_ldg_into_table</span><span class="p">():</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        table 1: chbible: id | bbid | snt | snt_lg | snt_sdg</span>
+<span class="sd">        table 2: debible: id | bbid | snt | snt_lg | snt_sdg</span>
+<span class="sd">        table 3: enbible: id | bbid | snt | snt_lg | snt_sdg</span>
+<span class="sd">        do in parallel</span>
+<span class="sd">        :param lan:</span>
+<span class="sd">        :return:</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="n">batch_lst</span> <span class="o">=</span> <span class="p">[</span>
+            <span class="p">{</span><span class="s2">&quot;lan&quot;</span><span class="p">:</span> <span class="s2">&quot;ch&quot;</span><span class="p">,</span> <span class="s2">&quot;table&quot;</span><span class="p">:</span> <span class="s2">&quot;chbible&quot;</span><span class="p">,</span> <span class="s2">&quot;snt&quot;</span><span class="p">:</span> <span class="s2">&quot;snt&quot;</span><span class="p">,</span> <span class="s2">&quot;ldg&quot;</span><span class="p">:</span> <span class="s2">&quot;snt_lg&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;lan&quot;</span><span class="p">:</span> <span class="s2">&quot;de&quot;</span><span class="p">,</span> <span class="s2">&quot;table&quot;</span><span class="p">:</span> <span class="s2">&quot;debible&quot;</span><span class="p">,</span> <span class="s2">&quot;snt&quot;</span><span class="p">:</span> <span class="s2">&quot;snt&quot;</span><span class="p">,</span> <span class="s2">&quot;ldg&quot;</span><span class="p">:</span> <span class="s2">&quot;snt_lg&quot;</span><span class="p">},</span>
+            <span class="p">{</span><span class="s2">&quot;lan&quot;</span><span class="p">:</span> <span class="s2">&quot;en&quot;</span><span class="p">,</span> <span class="s2">&quot;table&quot;</span><span class="p">:</span> <span class="s2">&quot;enbible&quot;</span><span class="p">,</span> <span class="s2">&quot;snt&quot;</span><span class="p">:</span> <span class="s2">&quot;snt&quot;</span><span class="p">,</span> <span class="s2">&quot;ldg&quot;</span><span class="p">:</span> <span class="s2">&quot;snt_lg&quot;</span><span class="p">}</span>
+        <span class="p">]</span>
+        <span class="n">db</span> <span class="o">=</span> <span class="n">records</span><span class="o">.</span><span class="n">Database</span><span class="p">(</span><span class="n">psqlDataBase</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;connecting postgre&#39;</span><span class="p">)</span>
+
+        <span class="n">ch_lan</span> <span class="o">=</span> <span class="n">batch_lst</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;lan&#39;</span><span class="p">]</span>
+        <span class="n">de_lan</span> <span class="o">=</span> <span class="n">batch_lst</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;lan&#39;</span><span class="p">]</span>
+        <span class="n">en_lan</span> <span class="o">=</span> <span class="n">batch_lst</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="s1">&#39;lan&#39;</span><span class="p">]</span>
+        <span class="n">ch_table</span> <span class="o">=</span> <span class="n">batch_lst</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;table&#39;</span><span class="p">]</span>
+        <span class="n">de_table</span> <span class="o">=</span> <span class="n">batch_lst</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;table&#39;</span><span class="p">]</span>
+        <span class="n">en_table</span> <span class="o">=</span> <span class="n">batch_lst</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="s1">&#39;table&#39;</span><span class="p">]</span>
+        <span class="n">snt</span> <span class="o">=</span> <span class="n">batch_lst</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;snt&#39;</span><span class="p">]</span>
+        <span class="n">ldg_col</span> <span class="o">=</span> <span class="n">batch_lst</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;ldg&#39;</span><span class="p">]</span>
+
+        <span class="n">ch_rows</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;SELECT id,&quot;</span> <span class="o">+</span> <span class="n">snt</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span> <span class="o">+</span> <span class="n">ldg_col</span><span class="o">+</span> <span class="s2">&quot; FROM &quot;</span> <span class="o">+</span> <span class="n">ch_table</span> <span class="p">)</span>
+        <span class="n">de_rows</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;SELECT id,&quot;</span> <span class="o">+</span> <span class="n">snt</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span> <span class="o">+</span> <span class="n">ldg_col</span><span class="o">+</span> <span class="s2">&quot; FROM &quot;</span> <span class="o">+</span> <span class="n">de_table</span><span class="p">)</span>
+        <span class="n">en_rows</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;SELECT id,&quot;</span> <span class="o">+</span> <span class="n">snt</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span> <span class="o">+</span> <span class="n">ldg_col</span><span class="o">+</span> <span class="s2">&quot; FROM &quot;</span> <span class="o">+</span> <span class="n">en_table</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ch_rows</span><span class="p">)):</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span><span class="n">ch_rows</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+                <span class="nb">id</span> <span class="o">=</span> <span class="n">ch_rows</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">ch_rows</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">ldg_ch</span> <span class="o">=</span>  <span class="n">get_dep_str</span><span class="p">(</span><span class="n">ch_rows</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">lan</span><span class="o">=</span><span class="n">ch_lan</span><span class="p">,</span> <span class="n">ch_parser</span><span class="o">=</span><span class="s1">&#39;stanford&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;&#39;&#39;&quot;</span><span class="p">)</span>
+                    <span class="n">sql_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;UPDATE </span><span class="si">{0}</span><span class="s2"> SET </span><span class="si">{1}</span><span class="s2"> = &#39;</span><span class="si">{2}</span><span class="s2">&#39; WHERE id = </span><span class="si">{3}</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">ch_table</span><span class="p">,</span> <span class="n">ldg_col</span><span class="p">,</span> <span class="n">ldg_ch</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">sql_str</span><span class="p">)</span>
+                    <span class="n">db</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">sql_str</span><span class="p">)</span>
+
+                <span class="nb">id</span> <span class="o">=</span> <span class="n">de_rows</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">de_rows</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">de_rows</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">ldg_de</span> <span class="o">=</span>  <span class="n">get_dep_str</span><span class="p">(</span><span class="n">de_rows</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">lan</span><span class="o">=</span><span class="n">de_lan</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39; * &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;&#39;&#39;&quot;</span><span class="p">)</span>
+                    <span class="n">sql_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;UPDATE </span><span class="si">{0}</span><span class="s2"> SET </span><span class="si">{1}</span><span class="s2"> = &#39;</span><span class="si">{2}</span><span class="s2">&#39; WHERE id = </span><span class="si">{3}</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">de_table</span><span class="p">,</span> <span class="n">ldg_col</span><span class="p">,</span> <span class="n">ldg_de</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">sql_str</span><span class="p">)</span>
+                    <span class="n">db</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">sql_str</span><span class="p">)</span>
+
+                <span class="nb">id</span> <span class="o">=</span> <span class="n">en_rows</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">en_rows</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+                <span class="k">if</span> <span class="n">en_rows</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">2</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">ldg_en</span> <span class="o">=</span>  <span class="n">get_dep_str</span><span class="p">(</span><span class="n">en_rows</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">],</span> <span class="n">lan</span><span class="o">=</span><span class="n">en_lan</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39; * &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;&#39;&#39;&quot;</span><span class="p">)</span>
+                    <span class="n">sql_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;UPDATE </span><span class="si">{0}</span><span class="s2"> SET </span><span class="si">{1}</span><span class="s2"> = &#39;</span><span class="si">{2}</span><span class="s2">&#39; WHERE id = </span><span class="si">{3}</span><span class="s2">&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">en_table</span><span class="p">,</span> <span class="n">ldg_col</span><span class="p">,</span> <span class="n">ldg_en</span><span class="p">,</span> <span class="nb">id</span><span class="p">)</span>
+                    <span class="nb">print</span><span class="p">(</span><span class="n">sql_str</span><span class="p">)</span>
+                    <span class="n">db</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">sql_str</span><span class="p">)</span></div>
+
+
+<div class="viewcode-block" id="load_bible_ldg_into_table_from_pickle"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.db.load_bible_ldg_into_table_from_pickle">[docs]</a><span class="k">def</span> <span class="nf">load_bible_ldg_into_table_from_pickle</span><span class="p">(</span><span class="n">lans</span><span class="o">=</span><span class="p">[</span><span class="s1">&#39;de&#39;</span><span class="p">,</span><span class="s1">&#39;ch&#39;</span><span class="p">,</span><span class="s1">&#39;en&#39;</span><span class="p">]):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    table 1: chbible: id | bbid | snt | snt_lg | snt_sdg</span>
+<span class="sd">    table 2: debible: id | bbid | snt | snt_lg | snt_sdg</span>
+<span class="sd">    table 3: enbible: id | bbid | snt | snt_lg | snt_sdg</span>
+<span class="sd">    do in parallel</span>
+<span class="sd">    :param lan:</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">batch_lst</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="p">{</span><span class="s2">&quot;lan&quot;</span><span class="p">:</span> <span class="s2">&quot;ch&quot;</span><span class="p">,</span> <span class="s2">&quot;table&quot;</span><span class="p">:</span> <span class="s2">&quot;chbible&quot;</span><span class="p">,</span> <span class="s2">&quot;snt&quot;</span><span class="p">:</span> <span class="s2">&quot;snt&quot;</span><span class="p">,</span> <span class="s2">&quot;ldg&quot;</span><span class="p">:</span> <span class="s2">&quot;snt_lg&quot;</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">&quot;lan&quot;</span><span class="p">:</span> <span class="s2">&quot;de&quot;</span><span class="p">,</span> <span class="s2">&quot;table&quot;</span><span class="p">:</span> <span class="s2">&quot;debible&quot;</span><span class="p">,</span> <span class="s2">&quot;snt&quot;</span><span class="p">:</span> <span class="s2">&quot;snt&quot;</span><span class="p">,</span> <span class="s2">&quot;ldg&quot;</span><span class="p">:</span> <span class="s2">&quot;snt_lg&quot;</span><span class="p">},</span>
+        <span class="p">{</span><span class="s2">&quot;lan&quot;</span><span class="p">:</span> <span class="s2">&quot;en&quot;</span><span class="p">,</span> <span class="s2">&quot;table&quot;</span><span class="p">:</span> <span class="s2">&quot;enbible&quot;</span><span class="p">,</span> <span class="s2">&quot;snt&quot;</span><span class="p">:</span> <span class="s2">&quot;snt&quot;</span><span class="p">,</span> <span class="s2">&quot;ldg&quot;</span><span class="p">:</span> <span class="s2">&quot;snt_lg&quot;</span><span class="p">}</span>
+    <span class="p">]</span>
+    <span class="n">db</span> <span class="o">=</span> <span class="n">records</span><span class="o">.</span><span class="n">Database</span><span class="p">(</span><span class="n">psqlDataBase</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;connecting postgre&#39;</span><span class="p">)</span>
+
+    <span class="n">ch_lan</span> <span class="o">=</span> <span class="n">batch_lst</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;lan&#39;</span><span class="p">]</span>
+    <span class="n">de_lan</span> <span class="o">=</span> <span class="n">batch_lst</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;lan&#39;</span><span class="p">]</span>
+    <span class="n">en_lan</span> <span class="o">=</span> <span class="n">batch_lst</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="s1">&#39;lan&#39;</span><span class="p">]</span>
+    <span class="n">ch_table</span> <span class="o">=</span> <span class="n">batch_lst</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;table&#39;</span><span class="p">]</span>
+    <span class="n">de_table</span> <span class="o">=</span> <span class="n">batch_lst</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="s1">&#39;table&#39;</span><span class="p">]</span>
+    <span class="n">en_table</span> <span class="o">=</span> <span class="n">batch_lst</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="s1">&#39;table&#39;</span><span class="p">]</span>
+    <span class="n">snt</span> <span class="o">=</span> <span class="n">batch_lst</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;snt&#39;</span><span class="p">]</span>
+    <span class="n">ldg_col</span> <span class="o">=</span> <span class="n">batch_lst</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="s1">&#39;ldg&#39;</span><span class="p">]</span>
+
+    <span class="n">ch_rows</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;SELECT id,&quot;</span> <span class="o">+</span> <span class="n">snt</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span> <span class="o">+</span> <span class="n">ldg_col</span> <span class="o">+</span> <span class="s2">&quot; FROM &quot;</span> <span class="o">+</span> <span class="n">ch_table</span><span class="p">)</span>
+    <span class="n">de_rows</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;SELECT id,&quot;</span> <span class="o">+</span> <span class="n">snt</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span> <span class="o">+</span> <span class="n">ldg_col</span> <span class="o">+</span> <span class="s2">&quot; FROM &quot;</span> <span class="o">+</span> <span class="n">de_table</span><span class="p">)</span>
+    <span class="n">en_rows</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="s2">&quot;SELECT id,&quot;</span> <span class="o">+</span> <span class="n">snt</span> <span class="o">+</span> <span class="s2">&quot;, &quot;</span> <span class="o">+</span> <span class="n">ldg_col</span> <span class="o">+</span> <span class="s2">&quot; FROM &quot;</span> <span class="o">+</span> <span class="n">en_table</span><span class="p">)</span>
+
+    <span class="n">dePickle</span> <span class="o">=</span> <span class="n">get_bible_pickle</span><span class="p">(</span><span class="n">lan</span><span class="o">=</span><span class="s1">&#39;de&#39;</span><span class="p">)</span>
+    <span class="n">enPickle</span> <span class="o">=</span> <span class="n">get_bible_pickle</span><span class="p">(</span><span class="n">lan</span><span class="o">=</span><span class="s1">&#39;en&#39;</span><span class="p">)</span>
+    <span class="n">chPickle</span> <span class="o">=</span> <span class="n">get_bible_pickle</span><span class="p">(</span><span class="n">lan</span><span class="o">=</span><span class="s1">&#39;ch&#39;</span><span class="p">)</span>
+
+    <span class="n">count</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="k">if</span> <span class="s1">&#39;de&#39;</span> <span class="ow">in</span> <span class="n">lans</span><span class="p">:</span>
+        <span class="nb">id</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">de_rows</span><span class="p">)</span>
+        <span class="n">tx</span> <span class="o">=</span> <span class="n">db</span><span class="o">.</span><span class="n">transaction</span><span class="p">()</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">ldg</span> <span class="ow">in</span> <span class="n">dePickle</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">ldg</span> <span class="o">=</span> <span class="n">ldg</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\t</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39; &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="s1">&#39; * &#39;</span><span class="p">)</span><span class="o">.</span><span class="n">replace</span><span class="p">(</span><span class="s2">&quot;&#39;&quot;</span><span class="p">,</span> <span class="s2">&quot;&#39;&#39;&quot;</span><span class="p">)</span>
+                <span class="n">snt</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">w</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">w</span> <span class="ow">in</span> <span class="p">[</span><span class="n">words</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39; &#39;</span><span class="p">)</span> <span class="k">for</span> <span class="n">words</span> <span class="ow">in</span> <span class="n">ldg</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;*&#39;</span><span class="p">)]])</span>
+                <span class="n">sql_str</span> <span class="o">=</span> <span class="s2">&quot;&quot;&quot;INSERT INTO </span><span class="si">{0}</span><span class="s2"> VALUES(</span><span class="si">{1}</span><span class="s2">, &#39;</span><span class="si">{2}</span><span class="s2">&#39;, &#39;</span><span class="si">{3}</span><span class="s2">&#39;, &#39;</span><span class="si">{4}</span><span class="s2">&#39;)&quot;&quot;&quot;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">de_table</span><span class="p">,</span> <span class="nb">id</span><span class="p">,</span> <span class="n">key</span><span class="p">,</span> <span class="n">snt</span><span class="p">,</span> <span class="n">ldg</span><span class="p">)</span>
+                <span class="nb">print</span><span class="p">(</span><span class="n">sql_str</span><span class="p">)</span>
+                <span class="n">db</span><span class="o">.</span><span class="n">query</span><span class="p">(</span><span class="n">sql_str</span><span class="p">)</span>
+
+                <span class="nb">id</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="n">count</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="n">tx</span><span class="o">.</span><span class="n">commit</span><span class="p">()</span>
+        <span class="k">except</span><span class="p">:</span>
+            <span class="n">tx</span><span class="o">.</span><span class="n">rollback</span><span class="p">()</span>
+
+    <span class="k">return</span> <span class="n">count</span></div>
+
+
+<div class="viewcode-block" id="key_word_search"><a class="viewcode-back" href="../../snt2ldg.html#snt2ldg.db.key_word_search">[docs]</a><span class="k">def</span> <span class="nf">key_word_search</span><span class="p">(</span><span class="n">snt</span><span class="p">,</span> <span class="n">lan</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    search database by key-words.</span>
+<span class="sd">    :param snt:</span>
+<span class="sd">    :param lan:</span>
+<span class="sd">    :return:</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">pass</span></div>
 </pre></div>
 
           </div>
