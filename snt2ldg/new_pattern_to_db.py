@@ -7,7 +7,6 @@ from pprint import pprint
 from collections import Counter
 
 
-
 def snt_has_words(snt, words):
     """
     check whether sentence has words
@@ -126,8 +125,9 @@ def minimal_connected_graph(nltkg, wlst):
 
 def minimal_connected_frame_graph(nltkg, wlst):
     """
-    extend minimal_connected_graph, if word in wlst is has frame word in its children
-    replace it with its v/a child
+    nltkg is an instance of nltk DependencyGraph
+    extend minimal_connected_graph, if word in wlst has frame word in its children
+    add its v/a child to graph
     :param nltkg: an instance of nltkg
     :param wlst: word list
     :return: a new graph
@@ -151,7 +151,7 @@ def get_children_addresses(nltkg, address):
     return sum(nltkg.nodes[address]['deps'].values(),[])
 
 
-def is_frame_word(nltkNode, ffeat=['V', 'A']):
+def is_frame_word(nltkNode, ffeat=['V', 'A', 'VBD']):
     """
     :param nltkNode:
     :return: boolean
@@ -162,7 +162,7 @@ def is_frame_word(nltkNode, ffeat=['V', 'A']):
     return False
 
 
-def nltkg_to_cnll(nltkg):
+def nltkg_to_cnll(nltkg, lan='de'):
     """
     transform an nltk graph into cnll10 string
     :param nltkg: a nltk graph
@@ -172,9 +172,17 @@ def nltkg_to_cnll(nltkg):
     pprint(nltkg.nodes)
     for key in nltkg.nodes:
         node = nltkg.nodes[key]
-        for key in ["address", "lemma", "ctag", "tag", "feats", "head", "rel"]:
-            cnll10 += "{} ".format(node.get(key, '_'))
-        cnll10 += " _ _ \n"
+        if lan=='de':
+            for key in ["address", "lemma", "ctag", "tag", "feats", "head", "rel", "word"]:
+                cnll10 += "{} ".format(node.get(key, '_'))
+            cnll10 += " _ _ \n"
+        elif lan=='en':
+            for key in ["address", "word", "ctag", "tag", "feats", "head", "rel", "lemma"]:
+                cnll10 += "{} ".format(node.get(key, '_'))
+            cnll10 += "_ _ \n"
+        elif lan=='ch':
+            print("to add the list of keys")
+            assert False
     print(cnll10)
     return cnll10
 
@@ -186,7 +194,8 @@ def create_conjunction_pattern(conjStr, sampleSnt, lan='de'):
     sampleStr is a sample sentence containing conjStr
     the function is to identify the graphical pattern of conjStr in the ldg of sampleStr
     Step 1: get ldg (cnll10) of sampleSnt, transform into nltk format
-    Step 2: copy out the minimal connected sub-component of nltk graph containing words in conjStr and root
+    * Step 2: copy out the minimal connected sub-component of nltk graph containing words in conjStr and root
+    (not do it for this moment)
     Step 3: transform back to cnll10 format
     Step 4: print out cnll10, if needs, save to database
     if saveDb is true, the result will be saved in database
@@ -205,15 +214,16 @@ def create_conjunction_pattern(conjStr, sampleSnt, lan='de'):
     wlst = make_word_list_from_phrase(conjStr)
     assert snt_has_words(sampleSnt, wlst)
     subg = minimal_connected_graph(nltkg, wlst)
-    subgf = minimal_connected_frame_graph(nltkg, wlst)
-    cnllStr = nltkg_to_cnll(subg)
-    cnllStr1 = nltkg_to_cnll(subgf)
+    # subgf = minimal_connected_frame_graph(nltkg, wlst)
+
+    cnllStr = nltkg_to_cnll(subg, lan=lan)
+    # cnllStr1 = nltkg_to_cnll(subgf)
+    cnllStr1 = nltkg_to_cnll(nltkg, lan=lan)
     return cnllStr, cnllStr1
 
 
 def get_query_result_from_db(database, queryStr):
     """
-
     :param database:
     :param queryStr:
     :return: a list of records, each record is a list

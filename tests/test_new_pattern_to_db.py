@@ -93,18 +93,25 @@ class SendCoreSnt2LDG(unittest.TestCase):
             assert address2 == []
 
 
-    @unittest.skip("skipping")
+    # @unittest.skip("skipping")
     def test_create_conjunction_pattern(self):
         testLst = [
              ("aber","Die Sonne ist nicht sehr groß,aber sie ist heiß.  ",
              "de",
-              "3 sein V VAFIN 3|Sg|Pres|Ind 0 root  _ _ *8 aber KON KON _ 3 kon  _ _ *",
-              "3 sein V VAFIN 3|Sg|Pres|Ind 0 root  _ _ *8 aber KON KON _ 3 kon  _ _ *10 sein V VAFIN 3|Sg|Pres|Ind 8 cj  _ _ *"),
+              "3 sein V VAFIN 3|Sg|Pres|Ind 0 root ist  _ _ *8 aber KON KON _ 3 kon aber  _ _ *",
+              "0 None TOP TOP None None None None  _ _ *1 die ART ART Def|Fem|Nom|Sg 2 det Die  _ _ *2 Sonne N NN Fem|Nom|Sg 3 subj Sonne  _ _ *3 sein V VAFIN 3|Sg|Pres|Ind 0 root ist  _ _ *4 nicht PTKNEG PTKNEG _ 3 adv nicht  _ _ *5 sehr ADV ADV _ 6 adv sehr  _ _ *6 groß ADV ADJD Pos| 3 pred groß  _ _ *7 , $, $, _ 0 root ,  _ _ *8 aber KON KON _ 3 kon aber  _ _ *9 sie PRO PPER 3|Sg|Fem|Nom 10 subj sie  _ _ *10 sein V VAFIN 3|Sg|Pres|Ind 8 cj ist  _ _ *11 heiß ADV ADJD Pos| 10 pred heiß  _ _ *12 . $. $. _ 0 root .  _ _ *"),
             ("Weder...noch..",
              "Weder war der Stern von Bethlehem eine Supernova, noch  ein Komet.  ",
              "de",
-             "1 weder KON KON _ 2 koord  _ _ *2 sein V VAFIN 3|Sg|Past|Ind 0 root  _ _ *10 noch KON KON _ 0 root  _ _ *",
-             "1 weder KON KON _ 2 koord  _ _ *2 sein V VAFIN 3|Sg|Past|Ind 0 root  _ _ *10 noch KON KON _ 0 root  _ _ *")
+             "1 weder KON KON _ 2 koord Weder  _ _ *2 sein V VAFIN 3|Sg|Past|Ind 0 root war  _ _ *10 noch KON KON _ 0 root noch  _ _ *",
+             "0 None TOP TOP None None None None  _ _ *1 weder KON KON _ 2 koord Weder  _ _ *2 sein V VAFIN 3|Sg|Past|Ind 0 root war  _ _ *3 die ART ART Def|Masc|Nom|Sg 4 det der  _ _ *4 Stern N NN Masc|Nom|Sg 2 subj Stern  _ _ *5 von PREP APPR Dat 4 pp von  _ _ *6 Bethlehem N NE Neut|Dat|Sg 5 pn Bethlehem  _ _ *7 eine ART ART Indef|Fem|Nom|Sg 8 det eine  _ _ *8 Supernova N NN Fem|Nom|Sg 2 pred Supernova  _ _ *9 , $, $, _ 0 root ,  _ _ *10 noch KON KON _ 0 root noch  _ _ *11 eine ART ART Indef|Masc|Nom|Sg 12 det ein  _ _ *12 Komet N NN Masc|Nom|Sg 10 cj Komet  _ _ *13 . $. $. _ 0 root .  _ _ *"),
+            (
+                "and",
+                "The two of them went to prison and the electric chair respectively.",
+                "en",
+                "5 went VBD VBD _ 0 root _ _ _ *7 prison NN NN _ 5 nmod _ _ _ *8 and CC CC _ 7 cc _ _ _ *",
+                "0 None TOP TOP None None None None _ _ *1 The DT DT _ 2 det _ _ _ *2 two CD CD _ 5 nsubj _ _ _ *3 of IN IN _ 4 case _ _ _ *4 them PRP PRP _ 2 nmod _ _ _ *5 went VBD VBD _ 0 root _ _ _ *6 to TO TO _ 7 case _ _ _ *7 prison NN NN _ 5 nmod _ _ _ *8 and CC CC _ 7 cc _ _ _ *9 the DT DT _ 11 det _ _ _ *10 electric JJ JJ _ 11 amod _ _ _ *11 chair NN NN _ 7 conj _ _ _ *12 respectively RB RB _ 5 advmod _ _ _ *"
+            )
         ]
         for pair in testLst:
             cnll, cnll1=snt2ldg.create_conjunction_pattern(pair[0], pair[1], lan=pair[2])
@@ -116,6 +123,7 @@ class SendCoreSnt2LDG(unittest.TestCase):
             print(pair[4])
             assert cnll == pair[3]
             assert cnll1 == pair[4]
+
 
     def test_query_db(self):
         queryLst = [("postgres://localhost/language_graph","select en_words from ed_words group by en_words;", "partly...partly"),
@@ -134,12 +142,13 @@ class SendCoreSnt2LDG(unittest.TestCase):
         for records in refLst:
             assert snt2ldg.is_valid_sample(records[0], records[1])
 
+    @unittest.skip('skip this')
     def test_learn_phrase_patterns(self):
         databaseName = "postgres://localhost/language_graph"
-        phraseQueryEn  = "select de_words from ed_words group by de_words;"
+        phraseQueryEn  = "select en_words from ed_words group by en_words;"
         sampleQueryEnDe = "select en_snt, de_snt  from ed_snt;"
-        queryFormatEn = """INSERT INTO de_pat VALUES({0}, '{1}', '{2}', '{3}', '{4}', {5})"""
-        count = snt2ldg.learn_phrase_patterns(lan='de', database=databaseName, phraseQuery=phraseQueryEn,
+        queryFormatEn = """INSERT INTO en_pat VALUES({0}, '{1}', '{2}', '{3}', '{4}', {5})"""
+        count = snt2ldg.learn_phrase_patterns(lan='en', database=databaseName, phraseQuery=phraseQueryEn,
                                       sampleQuery=sampleQueryEnDe, queryFormat=queryFormatEn)
         print(count)
         assert count > 0
