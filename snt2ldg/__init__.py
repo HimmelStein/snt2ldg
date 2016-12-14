@@ -14,3 +14,4 @@ from .new_pattern_to_db import get_children_addresses
 from .new_pattern_to_db import get_query_result_from_db
 from .new_pattern_to_db import learn_phrase_patterns
 from .new_pattern_to_db import is_valid_sample
+from .new_pattern_to_db import get_address_of_word

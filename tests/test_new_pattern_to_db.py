@@ -13,6 +13,7 @@ import unittest
 class SendCoreSnt2LDG(unittest.TestCase):
     """Basic test cases."""
 
+    @unittest.skip("skipping")
     def test_make_word_list_from_phrase(self):
         lst = [("not only...but also", ["not", "only", "but", "also"]),
                ("Weder...noch..", ["Weder", "noch"])]
@@ -21,8 +22,10 @@ class SendCoreSnt2LDG(unittest.TestCase):
             print(wlst)
             assert wlst == pair[1]
 
+    @unittest.skip("skipping")
     def test_dependency_graph(self):
-        lst = [("Weder war der Stern von Bethlehem eine Supernova, noch  ein Komet.  ",
+        lst = [
+            ("Weder war der Stern von Bethlehem eine Supernova, noch  ein Komet.  ",
                 "1	Weder	_	NNP	NNP	_	6	compound	_	_*\
 2	war	_	NN	NN	_	6	compound	_	_*\
 3	der	_	NN	NN	_	6	compound	_	_*\
@@ -37,12 +40,17 @@ class SendCoreSnt2LDG(unittest.TestCase):
         for pair in lst:
             cnll = snt2ldg.get_dep_str(pair[0])
             cnll = cnll.replace('\n','*')
-            print(cnll)
+            print('cnll', cnll)
             print(len(cnll), len(pair[1]))
             assert cnll == pair[1]
 
+    @unittest.skip('')
     def test_minimal_connected_graph(self):
-        lst = [("1	Weder	_	NNP	NNP	_	6	compound	_	_*\
+        lst = [
+            (
+            "1 Nero _ NNP NNP _ 2 nsubj _ _ *2 played _ VBD VBD _ 0 root _ _ *3 his _ PRP$ PRP$ _ 4 nmod:poss _ _ *4 flute _ NN NN _ 2 dobj _ _ *5 while _ IN IN _ 7 mark _ _ *6 Rome _ NNP NNP _ 7 nsubj _ _ *7 burned _ VBD VBD _ 2 advcl _ _ *",
+            ["while"], [2], [7],[5,7,2]),
+            ("1	Weder	_	NNP	NNP	_	6	compound	_	_*\
 2	war	_	NN	NN	_	6	compound	_	_*\
 3	der	_	NN	NN	_	6	compound	_	_*\
 4	Stern	_	NNP	NNP	_	6	compound	_	_*\
@@ -52,7 +60,8 @@ class SendCoreSnt2LDG(unittest.TestCase):
 8	Supernova	_	NNP	NNP	_	12	compound	_	_*\
 10	noch	_	NNP	NNP	_	12	appos	_	_*\
 11	ein	_	NNPS	NNPS	_	12	compound	_	_*\
-12	Komet	_	NNP	NNP	_	7	dobj	_	_*", ["Weder", "noch"], [7], [6, 12])]
+12	Komet	_	NNP	NNP	_	7	dobj	_	_*", ["Weder", "noch"], [7], [6, 12],[1, 6, 10, 12, 7])
+               ]
         for record in lst:
             cnll = record[0]
             cnll = cnll.replace('*', '\n')
@@ -60,40 +69,27 @@ class SendCoreSnt2LDG(unittest.TestCase):
             root = snt2ldg.get_root_address_from_nltkg(g)
             print('root', root)
             assert root == record[2]
-            lst1 = snt2ldg.get_addresses_from_child_to_ancestor(g, 1, 7, stop=[7])
-            print('lst1', lst1)
-            assert [6 ]== lst1 and len(lst1) == 1
-            lst2 = snt2ldg.get_addresses_from_child_to_ancestor(g, 10, 7,  stop=[7])
-            print('lst2', lst2)
-            assert [12] == lst2 and len(lst2) == 1
 
             newg = deepcopy(g)
             addressLst = []
             rootAddress = snt2ldg.get_root_address_from_nltkg(newg)
-            wordAddress = [1,10]
+            wordAddress = []
+            for word in record[1]:
+                wordAddress +=  snt2ldg.get_address_of_word(newg, word)
             for address in wordAddress:
                  addressBetween = snt2ldg.get_addresses_from_child_to_ancestor(newg, address, rootAddress[0])
                  addressLst += [address] + addressBetween
 
             addressLst+=rootAddress
             print(addressLst)
-            assert addressLst == [1, 6, 10, 12, 7]
+            assert addressLst == record[4]
             for i in list(newg.nodes.keys()):
                 if i not in addressLst:
                     newg.remove_by_address(i)
             pprint(newg.nodes)
-            assert len(newg.nodes) == 5
+            assert len(newg.nodes) == len(record[4])
 
-            address1 = snt2ldg.get_children_addresses(g, 1)
-            print('address1', address1)
-            assert address1 == []
-
-            address2 = snt2ldg.get_children_addresses(g, 10)
-            print('address2', address2)
-            assert address2 == []
-
-
-    # @unittest.skip("skipping")
+    @unittest.skip("skipping")
     def test_create_conjunction_pattern(self):
         testLst = [
              ("aber","Die Sonne ist nicht sehr groß,aber sie ist heiß.  ",
@@ -124,7 +120,6 @@ class SendCoreSnt2LDG(unittest.TestCase):
             assert cnll == pair[3]
             assert cnll1 == pair[4]
 
-
     def test_query_db(self):
         queryLst = [("postgres://localhost/language_graph","select en_words from ed_words group by en_words;", "partly...partly"),
                     ("postgres://localhost/language_graph", "select en_snt, de_snt  from ed_snt;",
@@ -142,14 +137,25 @@ class SendCoreSnt2LDG(unittest.TestCase):
         for records in refLst:
             assert snt2ldg.is_valid_sample(records[0], records[1])
 
-    @unittest.skip('skip this')
-    def test_learn_phrase_patterns(self):
+    # @unittest.skip('skip this')
+    def test_learn_en_phrase_patterns(self):
         databaseName = "postgres://localhost/language_graph"
         phraseQueryEn  = "select en_words from ed_words group by en_words;"
         sampleQueryEnDe = "select en_snt, de_snt  from ed_snt;"
         queryFormatEn = """INSERT INTO en_pat VALUES({0}, '{1}', '{2}', '{3}', '{4}', {5})"""
         count = snt2ldg.learn_phrase_patterns(lan='en', database=databaseName, phraseQuery=phraseQueryEn,
                                       sampleQuery=sampleQueryEnDe, queryFormat=queryFormatEn)
+        print(count)
+        assert count > 0
+
+    # @unittest.skip('skip this')
+    def test_learn_de_phrase_patterns(self):
+        databaseName = "postgres://localhost/language_graph"
+        phraseQueryEn = "select de_words from ed_words group by de_words;"
+        sampleQueryEnDe = "select en_snt, de_snt  from ed_snt;"
+        queryFormatEn = """INSERT INTO de_pat VALUES({0}, '{1}', '{2}', '{3}', '{4}', {5})"""
+        count = snt2ldg.learn_phrase_patterns(lan='de', database=databaseName, phraseQuery=phraseQueryEn,
+                                              sampleQuery=sampleQueryEnDe, queryFormat=queryFormatEn)
         print(count)
         assert count > 0
 

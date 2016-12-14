@@ -170,14 +170,15 @@ def nltkg_to_cnll(nltkg, lan='de'):
     """
     cnll10=""
     pprint(nltkg.nodes)
+
     for key in nltkg.nodes:
         node = nltkg.nodes[key]
         if lan=='de':
-            for key in ["address", "lemma", "ctag", "tag", "feats", "head", "rel", "word"]:
+            for key in ["address", "word", "lemma", "tag", "ctag", "feats", "head", "rel"]:
                 cnll10 += "{} ".format(node.get(key, '_'))
             cnll10 += " _ _ \n"
         elif lan=='en':
-            for key in ["address", "word", "ctag", "tag", "feats", "head", "rel", "lemma"]:
+            for key in ["address", "word", "lemma", "tag", "ctag", "feats", "head", "rel"]:
                 cnll10 += "{} ".format(node.get(key, '_'))
             cnll10 += "_ _ \n"
         elif lan=='ch':
@@ -185,6 +186,35 @@ def nltkg_to_cnll(nltkg, lan='de'):
             assert False
     print(cnll10)
     return cnll10
+
+
+def is_node_empty(g, i):
+    """
+    g is an instance of DependencyGraph
+    :param g:
+    :return: boolean
+    """
+    if g.nodes[i]['head'] == None and g.nodes[i]['word'] == None:
+        return True
+    else:
+        return False
+
+
+def remove_empty_node(g):
+    """
+    g is an instance of DependencyGraph
+    :param g:
+    remove last key-value of g
+    :param g:
+    :return:
+    """
+    rlt = []
+    for i in g.nodes.keys():
+        if is_node_empty(g, i):
+            rlt.append(i)
+    for i in rlt:
+        g.nodes.pop(i)
+    return g
 
 
 def create_conjunction_pattern(conjStr, sampleSnt, lan='de'):
@@ -211,6 +241,9 @@ def create_conjunction_pattern(conjStr, sampleSnt, lan='de'):
     cnll = cnll.replace('_ _ _', '_ _') + '\n'
     print(cnll)
     nltkg = DependencyGraph(cnll)
+    # no None node!
+    nltkg = remove_empty_node(nltkg)
+
     wlst = make_word_list_from_phrase(conjStr)
     assert snt_has_words(sampleSnt, wlst)
     subg = minimal_connected_graph(nltkg, wlst)
