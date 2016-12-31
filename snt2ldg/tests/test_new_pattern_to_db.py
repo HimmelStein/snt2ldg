@@ -137,7 +137,7 @@ class SendCoreSnt2LDG(unittest.TestCase):
         for records in refLst:
             assert snt2ldg.is_valid_sample(records[0], records[1])
 
-    # @unittest.skip('skip this')
+    @unittest.skip('skip this')
     def test_learn_en_phrase_patterns(self):
         databaseName = "postgres://localhost/language_graph"
         phraseQueryEn  = "select en_words from ed_words group by en_words;"
@@ -148,7 +148,7 @@ class SendCoreSnt2LDG(unittest.TestCase):
         print(count)
         assert count > 0
 
-    # @unittest.skip('skip this')
+    @unittest.skip('skip this')
     def test_learn_de_phrase_patterns(self):
         databaseName = "postgres://localhost/language_graph"
         phraseQueryEn = "select de_words from ed_words group by de_words;"
