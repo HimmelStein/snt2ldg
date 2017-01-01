@@ -131,11 +131,19 @@ if __name__ == "__main__":
     str_ch2 = '他借了几本书。'
     str_de1 = 'Jenes Mädchen ist sehr hübsch.'
     str_en1 = 'In other words, counterfactual thinking influences how satisfied each athlete feels.'
+    snt = "Bills on ports and immigration were submitted by Senator Brownback, Republican of Kansas"
+    cldg = dep_parser_en.raw_parse(snt)
+    dep = next(cldg)
+    print(dep.to_conll(10))
+    cldg = dep_parser_en.collapsed_parse(snt)
+    dep = next(cldg)
+    print(dep.to_conll(10))
+
     #dep_str = get_dep_str(str_ch1, lan='ch', ch_parser='hit')
     #print(dep_str)
     #dep_str = get_dep_str(str_en1, lan='en')
     #print(dep_str)
-    dep_str = get_dep_str(str_de1, lan='de',de_parser='parzu')
-    print(dep_str)
+    #dep_str = get_dep_str(str_de1, lan='de',de_parser='parzu')
+    #print(dep_str)
 
 
