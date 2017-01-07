@@ -5,6 +5,7 @@ import records
 from copy import deepcopy
 from pprint import pprint
 from collections import Counter
+import lanDB
 
 
 def snt_has_words(snt, words):
@@ -255,21 +256,9 @@ def create_conjunction_pattern(conjStr, sampleSnt, lan='de'):
     return cnllStr, cnllStr1
 
 
-def get_query_result_from_db(database, queryStr):
-    """
-    :param database:
-    :param queryStr:
-    :return: a list of records, each record is a list
-    """
-    db = records.Database(database)
-    rlt = [list(map(lambda ele: ele.strip(), rd.as_dict().values())) for rd in db.query(queryStr)]
-    return rlt
-
-
 def is_valid_sample(phrase, snt):
     """
-    snt is a valid sample for phrase, if phrase appears in snt, words of phrase only appear in
-    the phrase.
+    snt is a valid sample for phrase, if phrase appears in snt, words of phrase only appear in the phrase.
     :param phrase:
     :param snt:
     :return:
@@ -292,18 +281,6 @@ def is_valid_sample(phrase, snt):
     return True
 
 
-def do_transaction(database, queryTranscation):
-    db = records.Database(database)
-    tx = db.transaction()
-    try:
-        print(queryTranscation)
-        db.query(queryTranscation)
-        tx.commit()
-    except:
-        tx.rollback()
-        return False
-
-
 def learn_phrase_patterns(lan='en', database='', phraseQuery='', sampleQuery='', queryFormat=''):
     """
     we know a phrase, and (search for) sample sentences containing this phrase.
@@ -324,8 +301,8 @@ def learn_phrase_patterns(lan='en', database='', phraseQuery='', sampleQuery='',
     :param saveQueryFormat:
     :return: number of phrase patterns learned
     """
-    phraseLst = sum(get_query_result_from_db(database, phraseQuery), [])
-    sampleLst = sum(get_query_result_from_db(database, sampleQuery), [])
+    phraseLst = sum(lanDB.query_db(database, phraseQuery), [])
+    sampleLst = sum(lanDB.query_db(database, sampleQuery), [])
     count = 0
     for phrase in phraseLst:
         for snt in sampleLst:
@@ -333,7 +310,9 @@ def learn_phrase_patterns(lan='en', database='', phraseQuery='', sampleQuery='',
                 cnllStr, cnllStr1 = create_conjunction_pattern(phrase, snt, lan=lan)
                 cnllStr = cnllStr.replace('\n', '*')
                 cnllStr1 = cnllStr1.replace('\n', '*')
-                do_transaction(database, queryFormat.format(count, phrase, cnllStr, cnllStr1, snt, 1))
+                lanDB.insert_learned_phrase_patterns_into_db(
+                    lan=lan, id=count, phrase=phrase, cnllStr=cnllStr, cnllStr1 = cnllStr1, snt=snt, count=1
+                )
                 count += 1
     return count
 

@@ -1,0 +1,108 @@
+
+Human Translation Team Information
+
+Team 	   Team Composition (*)		Software	Translation Procedure
+ID	Translator  Proofer/Editor	Used?
+
+ta0	Ch-dom,10	[same]  	No	Translation by translator alone followed by
+						carefully checking dictionaries and searching
+						the Internet
+
+ta1	Ch-dom,15	Ch-dom,13	No	Translator does initial translation, editor
+						does qc; disagreement resolved between the two
+
+ta2	Ch-dom,3	Ch-dom,10	No	Draft translation by translator, followed by
+						editor's proofreading, used Dr. Eye to check
+						Pinyin
+
+ta3	Ch-dom,10	Ch-dom,11	No	Initial translation by translator followed by
+						editor's proofreading
+
+ta4	Ch-dom,4	En-dom,10	Yes	Initial translation by translator using Jinshan
+						Kuaiyi V.2001, followed by editor's 3 layers of
+						proofreading
+
+ta5	Ch-dom,11	En-dom,9	No	Draft translation by translator, followed by
+						editor's proofreading.
+
+ta6	Ch-dom,4 	Ch-dom,4	No	Initial translation by translator, followed by
+			Ch-dom,7		two passes from two proofreaders
+
+ta7	Ch-dom,14	[same]  	Yes	Use Trados Freelancer 3, translator checks
+						translation sentence by sentence
+
+ta8	Ch-dom,>10	[same]  	No	Some chtb (Xinhua) docs were translated by
+						colleagues (not allowed by the guidelines);
+						translator/proofreader did proofing/editing on
+						final output
+
+ta9	Ch-dom,10	En-dom,15	No	Initial translation by translator followed by
+						editor's proofreading; troublesome areas
+						jointly finalized by translator and editor
+
+tb0	En-dom,3	[same]  	No	First pass concentrated on meaning/terminology;
+						Second pass on editing; third pass on perfecting
+						English
+
+
+(*) If there is only one individual listed, it means the translator
+    does both translation and proofreading/editing.  "Ch-dom" means
+    Chinese-dominant bilingual, and "En-dom" means English dominant
+    bilingual.
+
+			Inside US	Outside US
+Translation Companies	   4		    3
+Freelance Translators	   1		    3
+
+
+
+Machine Translation System Information
+
+Sys.ID	System Information 	Translation Procedure
+
+tb1	Commercial software	Built-in batch translation was used.  Unrecognized
+				Chinese words are preserved in the output.  Thus output
+				is a mix of plain ASCII and GB.
+
+tb2	Commercial software	Built-in drag-and-drop file translation option was
+				used.  Unrecognized Chinese words are preserved in the
+				output.  The output is in Unicode. For conversion to ANSI
+				code, each output file was opened in Notepad and saved
+				as ANSI.  Some files had gibberish symbols in the Unicode
+				output and did not make sense either in the ANSI
+				version.
+
+tb3	Commercial software	To preserve the original like breaks - which it doesn't
+				in normal file translation, each source file was opened
+				in a web browser.  The output was then copied into a
+				Notepad buffer and then saved as a text file in ANSI.
+				The output encoding is also in Unicode and some output
+				files also have gibberish symbols.  For almost every
+				sentence translated, the system provided an alternative
+				translation, which was always removed in the final
+				output.
+
+tb4	Commercial software	A 16-bit application that only runs on Win9x/Win3.x
+				systems and does not handle long file names.  It also
+				crashes on certain input for no apparent reason -
+				when this happened, the corresponding output segment
+				was left empty.  All output was saved in a temporary
+				file and renamed as the original.
+
+tb5	Web-based free service	Web transltion option was used.  The source files
+				were placed temporarily on a web server and the link
+				to each invididual file was given to the system for
+				translation.  The output was then copied to a
+				Notepad window and saved using the original file
+				name.  The output did not have line breaks - they
+				were manually inserted in correspondence with the
+				source.
+
+tb6	Web-based free service	The simple procedure of copying, pasting and saving
+				was used.  The content of each source file was copied
+				into the source box for translation.  The content of the
+				target box was copied to a Notepad buffer.  Words not
+				translated could not display properly in the output box,
+				which seems to indicate Unicode encoding used by the
+				system.  Some gibberish symbols remain in the output.
+

@@ -1,7 +1,3 @@
-from .db import sample_snt_to_ldg_in_table
-from .db import check_database
-from .db import get_raw_ldg_with_id_from_pons
-from .db import load_bible_ldg_into_table_from_pickle
 from .new_snt_to_ldg import get_dep_str
 from .new_snt_to_ldg import snt_to_ldg
 from .new_pattern_to_db import make_word_list_from_phrase
@@ -11,7 +7,6 @@ from .new_pattern_to_db import get_root_address_from_nltkg
 from .new_pattern_to_db import get_addresses_from_child_to_ancestor
 from .new_pattern_to_db import nltkg_to_cnll
 from .new_pattern_to_db import get_children_addresses
-from .new_pattern_to_db import get_query_result_from_db
 from .new_pattern_to_db import learn_phrase_patterns
 from .new_pattern_to_db import is_valid_sample
 from .new_pattern_to_db import get_address_of_word

@@ -3,15 +3,16 @@
 import os
 import time
 from nltk.parse.stanford import StanfordParser
-from nltk.parse.stanford import StanfordDependencyParser
+from nltk.parse.stanford import StanfordDependencyParser, StanfordNeuralDependencyParser
 from nltk.tokenize.stanford_segmenter import StanfordSegmenter
 from subprocess import Popen, PIPE
 
 os.environ['STANFORD_PARSER'] = 'stanford-parser.jar'
-os.environ['STANFORD_MODELS'] = 'stanford-parser-3.6.0-models.jar'
+os.environ['STANFORD_MODELS'] = 'stanford-parser-3.7.0-models.jar'
 
 model_en_path = os.path.join(os.path.dirname(os.path.realpath(__file__)), 'helpers',"englishPCFG.ser.gz")
 model_de_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),'helpers',"germanPCFG.ser.gz")
+jar_model_de_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),'helpers/stanford-corenlp-full-2016-10-31')
 model_cn_path = os.path.join(os.path.dirname(os.path.realpath(__file__)),'helpers',"chinesePCFG.ser.gz")
 model_ch_lex_path =os.path.join(os.path.dirname(os.path.realpath(__file__)),'helpers', "chineseFactored.ser.gz")
 
@@ -129,15 +130,35 @@ def test_parser():
 if __name__ == "__main__":
     str_ch1 = '国务院总理今天出访美国'
     str_ch2 = '他借了几本书。'
+    snt_ch = "她看着我，好象没听懂我说的话似的。"
     str_de1 = 'Jenes Mädchen ist sehr hübsch.'
+    snt_de = "Sie schaut mich an, als ob sie mich nicht verstände."
     str_en1 = 'In other words, counterfactual thinking influences how satisfied each athlete feels.'
     snt = "Bills on ports and immigration were submitted by Senator Brownback, Republican of Kansas"
-    cldg = dep_parser_en.raw_parse(snt)
+    snt_en2 = 'I like cat and dog'
+    cldg = dep_parser_en.raw_parse(snt_en2)
+    dep = next(cldg)
+    print(dep.to_conll(10))
+    cldg = dep_parser_en.collapsed_parse(snt_en2)
     dep = next(cldg)
     print(dep.to_conll(10))
     cldg = dep_parser_en.collapsed_parse(snt)
     dep = next(cldg)
     print(dep.to_conll(10))
+
+    ch_seg_snt = segmenter.segment(snt_ch).strip('\n').strip('。')
+    cldg = dep_parser_cn.collapsed_parse(ch_seg_snt)
+    dep = next(cldg)
+    print(dep.to_conll(10))
+
+    cldg = dep_parser_de.raw_parse(snt_de)
+    dep = next(cldg)
+    print(dep.to_conll(10))
+
+    # http://stackoverflow.com/questions/31975893/how-can-i-get-a-grammaticalstructure-object-for-a-german-sentence-using-the-stan
+
+    cldg = get_dep_str(snt_de, lan='de', de_parser='parzu')
+    print(cldg)
 
     #dep_str = get_dep_str(str_ch1, lan='ch', ch_parser='hit')
     #print(dep_str)

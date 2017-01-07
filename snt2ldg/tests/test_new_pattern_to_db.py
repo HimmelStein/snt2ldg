@@ -7,7 +7,7 @@ from pprint import pprint
 
 import json
 import unittest
-
+import lanDB
 
 
 class SendCoreSnt2LDG(unittest.TestCase):
@@ -120,44 +120,12 @@ class SendCoreSnt2LDG(unittest.TestCase):
             assert cnll == pair[3]
             assert cnll1 == pair[4]
 
-    def test_query_db(self):
-        queryLst = [("postgres://localhost/language_graph","select en_words from ed_words group by en_words;", "partly...partly"),
-                    ("postgres://localhost/language_graph", "select en_snt, de_snt  from ed_snt;",
-                     "Einstein was a clean person, but he never combed his hair.")
-        ]
-        for records in queryLst:
-            rlt = sum(snt2ldg.get_query_result_from_db(records[0], records[1]),[])
-            print(rlt)
-            assert records[2] in rlt
-
     def test_is_valid_phrase(self):
         refLst=[
             ("partly...partly", "partly a b c d, partly e f sdfas .")
         ]
         for records in refLst:
             assert snt2ldg.is_valid_sample(records[0], records[1])
-
-    @unittest.skip('skip this')
-    def test_learn_en_phrase_patterns(self):
-        databaseName = "postgres://localhost/language_graph"
-        phraseQueryEn  = "select en_words from ed_words group by en_words;"
-        sampleQueryEnDe = "select en_snt, de_snt  from ed_snt;"
-        queryFormatEn = """INSERT INTO en_pat VALUES({0}, '{1}', '{2}', '{3}', '{4}', {5})"""
-        count = snt2ldg.learn_phrase_patterns(lan='en', database=databaseName, phraseQuery=phraseQueryEn,
-                                      sampleQuery=sampleQueryEnDe, queryFormat=queryFormatEn)
-        print(count)
-        assert count > 0
-
-    @unittest.skip('skip this')
-    def test_learn_de_phrase_patterns(self):
-        databaseName = "postgres://localhost/language_graph"
-        phraseQueryEn = "select de_words from ed_words group by de_words;"
-        sampleQueryEnDe = "select en_snt, de_snt  from ed_snt;"
-        queryFormatEn = """INSERT INTO de_pat VALUES({0}, '{1}', '{2}', '{3}', '{4}', {5})"""
-        count = snt2ldg.learn_phrase_patterns(lan='de', database=databaseName, phraseQuery=phraseQueryEn,
-                                              sampleQuery=sampleQueryEnDe, queryFormat=queryFormatEn)
-        print(count)
-        assert count > 0
 
     def test_get_root_of_node(self):
         assert True
